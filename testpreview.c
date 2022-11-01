@@ -2,10 +2,10 @@
 #include "testlib.h"
 
 int f() {
-	return assert(1, __LINE__, __FILE__);
+	return ASSERT(1);
 }
 int g() {
-	return assert(0, __LINE__, __FILE__);
+	return ASSERT(0);
 }
 int main() {
 	printf("Test Preview\n");
