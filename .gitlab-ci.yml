@@ -1,0 +1,27 @@
+image: gcc
+
+stages:
+ - build
+ - test
+
+
+build:
+  stage: build
+  script:
+  - echo make (TODO)
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths: 
+    - "*.o"
+
+test:
+  stage: test
+  script:
+    - make test
+  cache:
+      key: "$CI_COMMIT_REF_NAME"
+      policy: pull
+      paths:
+        - "*.o"
+
