@@ -1,7 +1,7 @@
 #ifndef SLASH_TESTLIB_H
 #define SLASH_TESTLIB_H
 
-#define ASSERT(b) assert((b), __LINE__, __FILE__)
+#define ASSERT(b) (assert((b), __LINE__, __FILE__))
 
 /**
  * Do the Test given in argument and print informations about it, like the execution time.
