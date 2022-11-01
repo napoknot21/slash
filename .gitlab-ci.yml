@@ -8,7 +8,7 @@ stages:
 build:
   stage: build
   script:
-  - echo make (TODO)
+  - echo make [TODO]
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
