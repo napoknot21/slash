@@ -2,9 +2,9 @@ CC ?= gcc
 FLAGS ?= -Wall -std=c11
 
 TARGET ?= bit
-TEST_TARGET ?= testpreview 
+TEST_TARGET ?= test/testpreview 
 OBJECTS ?=  
-TEST_OBJECTS ?= testlib.o testpreview.o
+TEST_OBJECTS ?= build/testlib.o build/testpreview.o
 all: $(TARGET)
 
 run: $(TARGET)
@@ -19,7 +19,7 @@ $(TARGET): $(TARGET) $(OBJECTS)
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 	@$(CC) $(FLAGS) -o $(TEST_TARGET) $^ 
 	
-%.o: %.c
+./build/%.o: ./test/%.c
 	@$(CC) $(FLAGS) -o $@ -c $< 
 
 clean: 
