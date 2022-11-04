@@ -22,17 +22,17 @@ $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 ./build/test/%.o: ./test/%.c build build/test
 	@$(CC) $(FLAGS) -o $@ -c $< 
 
-./build/src/%.o: ./src/%.c build build/test
+./build/src/%.o: ./src/%.c build build/src
 	@$(CC) $(FLAGS) -o $@ -c $<
 
 clean: 
-	@rm -rf ./build $(TARGET) $(TEST_TARGET)
+	@rm -rf ./build rm -f $(TARGET) $(TEST_TARGET)
 
 build/src: build
-	mkdir build/src
+	@mkdir build/src
 
 build/test: build
-	mkdir build/test
+	@mkdir build/test
 
 build:
-	mkdir -p build 
+	@mkdir build 
