@@ -29,7 +29,7 @@ clean:
 	@rm -rf ./build $(TARGET) $(TEST_TARGET)
 
 build/src: build
-	make build/src
+	mkdir build/src
 
 build/test: build
 	mkdir build/test
