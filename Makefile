@@ -4,7 +4,7 @@ FLAGS ?= -Wall -std=c11
 TARGET ?= bit
 TEST_TARGET ?= test/testpreview 
 OBJECTS ?=  
-TEST_OBJECTS ?= build/testlib.o build/testpreview.o
+TEST_OBJECTS ?= build/test/testlib.o build/test/testpreview.o
 all: $(TARGET)
 
 run: $(TARGET)
@@ -19,9 +19,20 @@ $(TARGET): $(TARGET) $(OBJECTS)
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 	@$(CC) $(FLAGS) -o $(TEST_TARGET) $^ 
 	
-./build/%.o: ./test/%.c
+./build/test/%.o: ./test/%.c build build/test
 	@$(CC) $(FLAGS) -o $@ -c $< 
 
-clean: 
-	@rm -f *.o $(TARGET) $(TEST_TARGET)
+./build/src/%.o: ./src/%.c build build/test
+	@$(CC) $(FLAGS) -o $@ -c $<
 
+clean: 
+	@rm -rf ./build $(TARGET) $(TEST_TARGET)
+
+build/src: build
+	make build/src
+
+build/test: build
+	mkdir build/test
+
+build:
+	mkdir -p build 
