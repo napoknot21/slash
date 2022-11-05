@@ -41,7 +41,6 @@ $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D) 
 	@$(CC) $(CFLAGS) -o $@ -c $< 
-
 clean:
 	@rm -rf $(BUILD_DIR) 
 	@rm -f $(TARGET) $(TEST_TARGET)
