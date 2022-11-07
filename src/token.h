@@ -1,6 +1,6 @@
 enum type 
 {
-    CMD,REDIRECT,ARGS, TYPE_NONE
+    CMD,REDIRECT,ARG, TYPE_NONE
 };
 
 enum type_spec 
@@ -16,6 +16,6 @@ typedef struct token
     enum type_spec type_spec;
 } token;
 
-token *token_new(char *data, enum type type);
+token *token_new(const char *data, enum type type, enum type_spec type_spec);
 
 void token_free(token *t);

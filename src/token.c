@@ -1,8 +1,8 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "token.h"
 
-// static enum type_spec computecmd(char *data);
 static enum type_spec computeredirect(const char *data, size_t len)
 {
     if (len == 1)
@@ -27,9 +27,16 @@ static enum type_spec computeredirect(const char *data, size_t len)
         return SPEC_NONE;
     }
 
-    if (len == 3) {
-        if (char [0] == '2' && char[1] == '>' && char[2] == '|') { return ERROUT_TRUNC; }
-        if (char[0] == '2' && char[1] == '>' && char[2] == '>') { return ERROUT_APPEND; }
+    if (len == 3) 
+	{
+        if (data[0] == '2' && data[1] == '>' && data[2] == '|') 
+		{ 
+			return ERROUT_TRUNC; 
+		}
+        if (data[0] == '2' && data[1] == '>' && data[2] == '>') 
+		{ 
+			return ERROUT_APPEND; 
+		}
     }
     return SPEC_NONE;
 }

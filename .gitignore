@@ -1,4 +1,7 @@
+build/
 *.o
 testpreview
 slash
 slash_test
+*.d
+.vscode/
