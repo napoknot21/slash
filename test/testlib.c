@@ -7,7 +7,7 @@
 #define C_GREEN "\x1B[32m"
 #define C_CLEAR "\x1B[0m"
 
-int test(int (*f)(),const char *name) 
+int test(int (*f)(), const char *name) 
 {
 	printf("[TEST] %s()...\n", name);
 	const clock_t tic = clock();
