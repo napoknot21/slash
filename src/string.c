@@ -5,7 +5,7 @@
 string * make_string(const char * ch)
 {	
 	string * str = malloc(sizeof(struct string));
-	str->cnt = make_vector(sizeof(char));
+	str->cnt = make_vector(sizeof(char), NULL);
 
 	if(ch)
 	{
@@ -89,4 +89,9 @@ string * substr(string * str, size_t from, size_t to)
 	memmove(sub, (void*)((char*)(str->cnt->data + from)), to - from);
 	
 	return make_string(sub);
+}
+
+size_t size_str(string * str)
+{
+	return str->cnt->size;
 }

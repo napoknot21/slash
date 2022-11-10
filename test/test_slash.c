@@ -39,7 +39,7 @@ int string_tests()
 	long ch_s = rand() % 0xff;
 	char * ch = malloc(ch_s);
 
-	for(size_t k = 0; k < ch_s - 1; k++)
+	for(size_t k = 0; k < (size_t) ch_s - 1; k++)
 	{
 		*(ch + k) = rand() % 0x80;
 	}

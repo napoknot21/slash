@@ -34,5 +34,6 @@ char * front_str(string *);
 char * back_str(string *);
 
 string * substr(string *, size_t, size_t);
+size_t size_str(string *);
 
 #endif 
