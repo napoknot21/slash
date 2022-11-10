@@ -11,7 +11,7 @@ int vector_tests()
 {	
 	long iterations = rand() % 0xffff;
 
-	vector * vec = make_vector(sizeof(long));	
+	vector * vec = make_vector(sizeof(long), NULL);	
 
 	for(long k = 0; k < iterations; k++)
 	{

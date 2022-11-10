@@ -1,7 +1,7 @@
 #include "vector.h"
 #include <string.h>
 
-vector * make_vector(size_t elem_s)
+vector * make_vector(size_t elem_s, void (*free)(void*))
 {
 	vector * vec = malloc(sizeof(struct vector));
 	
@@ -10,12 +10,21 @@ vector * make_vector(size_t elem_s)
 	vec->elem_s = elem_s;
 
 	vec->data = malloc(elem_s * vec->capacity);
+	vec->free = free;
 
 	return vec;
 }
 
 void free_vector(vector * vec)
 {
+	if(vec->free)
+	{
+		for(size_t k = 0; k < vec->size; k++)
+		{
+			vec->free(vec->data + k);
+		}
+	}
+
 	free(vec->data);
 	free(vec);
 }

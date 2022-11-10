@@ -12,6 +12,7 @@ typedef struct vector
 	size_t elem_s;
 
 	void * data;
+	void (*free)(void*);
 
 } vector;
 
@@ -19,7 +20,7 @@ typedef struct vector
  * Construction/Destruction functions
  */
 
-vector * make_vector(size_t);
+vector * make_vector(size_t, void (*)(void*));
 void free_vector(vector *);
 
 /*
