@@ -3,8 +3,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "token.h"
+#include "string.h"
 
-static enum type_spec computeredirect(const char *data, size_t len)
+static enum token_type_spec computeredirect(const char *data, size_t len)
 {
     if (len == 1)
     {
@@ -53,7 +54,7 @@ static enum type_spec computeredirect(const char *data, size_t len)
 }
 
 // TODO: A Remplacer par string
-token *token_new(const char *data, enum type type, enum type_spec type_spec)
+token *token_new(const char *data, enum token_type type, enum token_type_spec type_spec)
 {
     token *new = malloc(sizeof(token));
     if (new == NULL)
@@ -61,9 +62,8 @@ token *token_new(const char *data, enum type type, enum type_spec type_spec)
         perror("token_new");
         return NULL;
     }
-    const size_t len = strlen(data);
-    new->data = malloc(sizeof(char) * (len + 1));
-    if (new->data == NULL || !memcpy(new->data, data, sizeof(char) * (len + 1)))
+    new->data = make_string(data);
+    if (new->data == NULL)
     {
         perror("token_new");
         free(new);
@@ -76,7 +76,7 @@ token *token_new(const char *data, enum type type, enum type_spec type_spec)
     }
     if (type == TYPE_NONE)
     {
-        new->type_spec = computeredirect(data, len);
+        new->type_spec = computeredirect(data, strlen(data));
         new->type = (new->type_spec == SPEC_NONE) ? ARG : REDIRECT;
     }
     return new;
@@ -84,6 +84,6 @@ token *token_new(const char *data, enum type type, enum type_spec type_spec)
 
 void token_free(token *t)
 {
-    free(t->data);
+    free_string(t->data);
     free(t);
 }

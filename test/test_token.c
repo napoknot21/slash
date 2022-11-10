@@ -1,25 +1,32 @@
 #include <string.h>
+#include <stdio.h>
 #include "test_token.h"
 #include "../src/token.h"
 #include "testlib.h"
 
-static int test_cmd(char *str, enum type type, enum type_spec spec)
+static int test_cmd(char *str, enum token_type type, enum token_type_spec spec)
 {
     int bool = 1;
     token *t = token_new(str, type, spec);
     bool &= ASSERT(t->type == type);
-    bool &= ASSERT(strcmp(str, t->data) == 0);
+    char res[t->data->cnt->size + 1];
+    memmove(res, front_str(t->data), t->data->cnt->size);
+    res[t->data->cnt->size] = 0;
+    bool &= ASSERT(strcmp(str, res) == 0);
     bool &= ASSERT(t->type_spec == spec);
     token_free(t);
     return bool;
 }
 
-static int test_new(char *str, enum type type, enum type_spec spec)
+static int test_new(char *str, enum token_type type, enum token_type_spec spec)
 {
     int bool = 1;
     token *t = TOKEN_NEW(str);
     bool &= ASSERT(t->type == type);
-    bool &= ASSERT(strcmp(str, t->data) == 0);
+    char res[t->data->cnt->size + 1];
+    memmove(res, front_str(t->data), t->data->cnt->size);
+    res[t->data->cnt->size] = 0;
+    bool &= ASSERT(strcmp(str, res) == 0);
     bool &= ASSERT(t->type_spec == spec);
     token_free(t);
     return bool;

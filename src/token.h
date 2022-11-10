@@ -1,5 +1,6 @@
 #ifndef SLASH_TOKEN_H
 #define SLASH_TOKEN_H
+#include "string.h"
 
 /**
  * The only purpose of this macro is to simplify the syntax
@@ -12,18 +13,19 @@
 /**
  * Define the token type
  */
-enum type
+enum token_type
 {
     CMD,      // Command
     REDIRECT, // Redirection
     ARG,      // Argument
+    OPERATOR, // Operator
     TYPE_NONE // Default type
 };
 
 /**
  * Define a specification for the type. Each specification is for a specific type.
  */
-enum type_spec
+enum token_type_spec
 {
     /**
      * CMD specification
@@ -39,12 +41,17 @@ enum type_spec
     STDOUT_TRUNC,
     STDOUT_APPEND,
     ERROUT,
-    /**
-     * Redirect specification
-     */
     ERROUT_TRUNC,
     ERROUT_APPEND,
     PIPE,
+
+    /**
+     * OPERATOR specification
+     */
+    AND,
+    OR,
+    SEMICOLON,
+
     /**
      * ARG specification
      */
@@ -56,9 +63,9 @@ enum type_spec
  */
 typedef struct token
 {
-    char *data;               // token value
-    enum type type;           // token type
-    enum type_spec type_spec; // type specification
+    string *data;                   // token value
+    enum token_type type;           // token type
+    enum token_type_spec type_spec; // type specification
 } token;
 
 /**
@@ -68,7 +75,7 @@ typedef struct token
  * @param type The token's type
  * @param type_spec The token's type specification
  */
-token *token_new(const char *data, enum type type, enum type_spec type_spec);
+token *token_new(const char *data, enum token_type type, enum token_type_spec type_spec);
 
 /**
  * Free a token and its value.
