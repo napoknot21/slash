@@ -15,14 +15,29 @@ typedef struct vector
 
 } vector;
 
+/*
+ * Construction/Destruction functions
+ */
+
 vector * make_vector(size_t);
+void free_vector(vector *);
+
+/*
+ * Operation functions
+ */
 
 int push_back(vector *, void *);
 void * pop_back(vector *);
-void * at(vector *, size_t);
 
+void reserve(vector *, size_t);
 void clear(vector *);
 
-void free_vector(vector *);
+/*
+ * Access function
+ */
+
+void * at(vector *, size_t);
+void * front(vector *);
+void * back(vector *);
 
 #endif

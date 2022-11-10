@@ -12,7 +12,6 @@ vector * make_vector(size_t elem_s)
 	vec->data = malloc(elem_s * vec->capacity);
 
 	return vec;
-
 }
 
 void free_vector(vector * vec)
@@ -25,9 +24,7 @@ int push_back(vector * vec, void * data)
 {
 	if(vec->size >= vec->capacity)
 	{
-		vec->capacity *= 2;
-		vec->data = realloc(vec->data, vec->elem_s * vec->capacity);
-
+		reserve(vec, vec->capacity * 2);
 		if(!vec->data) return 1;
 	}
 
@@ -63,7 +60,30 @@ void * at(vector * vec, size_t i)
 	return (void*)((char*)(vec->data) + i * vec->elem_s);
 }
 
+void reserve(vector * vec, size_t ncap)
+{
+	if(ncap <= vec->capacity) return;
+
+	vec->capacity = ncap;
+	vec->data = realloc(vec->data, vec->elem_s * vec->capacity);
+}
+
 void clear(vector * vec)
 {
 	memset(vec->data, 0x0, vec->elem_s * vec->size);
+}
+
+void * front(vector * vec)
+{
+	return vec->data;
+}
+
+void * back(vector * vec)
+{
+	if(!vec->size)
+	{
+		return NULL;
+	}
+
+	return (void*)((char*) vec->data + (vec->size - 1) * vec->elem_s);
 }
