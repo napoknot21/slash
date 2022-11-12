@@ -36,4 +36,6 @@ char * back_str(string *);
 string * substr(string *, size_t, size_t);
 size_t size_str(string *);
 
+int cmp_str(string *, string *);
+
 #endif 

@@ -15,7 +15,7 @@ vector * make_vector(size_t elem_s, void (*free)(void*))
 	return vec;
 }
 
-void free_vector(vector * vec)
+void free_data(vector * vec)
 {
 	if(vec->free)
 	{
@@ -24,7 +24,11 @@ void free_vector(vector * vec)
 			vec->free(vec->data + k);
 		}
 	}
+}
 
+void free_vector(vector * vec)
+{
+	free_data(vec);
 	free(vec->data);
 	free(vec);
 }
@@ -79,6 +83,7 @@ void reserve(vector * vec, size_t ncap)
 
 void clear(vector * vec)
 {
+	free_data(vec);
 	memset(vec->data, 0x0, vec->elem_s * vec->size);
 }
 

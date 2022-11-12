@@ -95,3 +95,21 @@ size_t size_str(string * str)
 {
 	return str->cnt->size;
 }
+
+int cmp_str(string * str_a, string * str_b)
+{
+	if(size_str(str_a) != size_str(str_b)) 
+	{
+		return 0;
+	}
+
+	for(size_t k = 0; k < str_a->cnt->size; k++)
+	{
+		if(*at_str(str_a, k) != *at_str(str_b, k))
+		{
+			return 0;
+		}
+	}
+
+	return 1;
+}
