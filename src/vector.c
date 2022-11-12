@@ -78,7 +78,17 @@ void reserve(vector * vec, size_t ncap)
 	if(ncap <= vec->capacity) return;
 
 	vec->capacity = ncap;
-	vec->data = realloc(vec->data, vec->elem_s * vec->capacity);
+	void *tmp = realloc(vec->data, vec->elem_s * vec->capacity);
+	if (tmp == NULL) 
+	{
+		free_data(vec->data);
+		free(vec->data);
+		vec->data = NULL;
+	} 
+	else 
+	{
+		vec->data = tmp;
+	}
 }
 
 void clear(vector * vec)

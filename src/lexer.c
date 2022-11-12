@@ -134,7 +134,7 @@ static token *buildtoken(const char *str, token *last)
         int hashmap_get = 0;
         type_spec = (hashmap_get) ? INTERNAL : EXTERNAL;
     }
-    token *t = token_new(str, type, type_spec);
+    token *t = make_token(str, type, type_spec);
     return t;
 
 }
@@ -160,7 +160,7 @@ vector *lex(char *prompt)
 {
     char *line = cpy(prompt);
     char *delimeters = " ";
-    vector *tokens = make_vector(sizeof(token), token_free);
+    vector *tokens = make_vector(sizeof(token), u_free_token);
     token *last = NULL;
     if (tokens == NULL)
     {
@@ -177,12 +177,12 @@ vector *lex(char *prompt)
             goto error;
         }
         push_back(tokens, tok);
-        //if (last != NULL) free(last);
+        if (last != NULL) free(last);
         last = tok;
         tmp = strtok(NULL, delimeters);
     }
-    //free(last);
-    //free(line);
+    free(last);
+    free(line);
     return tokens;
 
 error:
@@ -192,7 +192,7 @@ error:
     }
     if (last)
     {
-        token_free(last);
+        free_token(last);
     }
     if (line)
     {

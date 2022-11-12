@@ -33,7 +33,7 @@ int vector_tests()
 
 	clear(vec);
 	ass &= !vec->size;
-	free(vec);
+	free_vector(vec);
 	return ass;
 }
 
@@ -61,14 +61,14 @@ int string_tests()
 	{
 		if (*at_str(str, alpha + k) != *at_str(sub, k))
 		{
-			free(str);
+			free_string(str);
 			free(sub);
 			free(ch);
 			return ASSERT(0);
 		}
 	}
-	free(str);
-	free(sub);
+	free_string(str);
+	free_string(sub);
 	free(ch);
 	return ASSERT(1);
 }
@@ -80,7 +80,7 @@ int main()
 	int bool = 1;
 	bool &= test(vector_tests, "vector");
 	bool &= test(string_tests, "string");
-	bool &= test(test_token, "token_new");
+	bool &= test(test_token, "make_token");
 	bool &= test(test_lex, "lex");
 
 	return bool ? 0 : 1;

@@ -36,7 +36,7 @@ static int test_newtokencmd(char *str, enum token_type type, enum token_type_spe
     }
     token *t = at(res, res->size - 1);
     int bool = test_tokendata(t, str, type, spec);
-    // free_vector(res);
+    free_vector(res);
     return bool;
 }
 
@@ -70,7 +70,7 @@ static int test_newtoken(char *str, enum token_type type, enum token_type_spec s
     }
     token *t = at(res, res->size - 1);
     int bool = test_tokendata(t, str, type, spec);
-    // free_vector(res);
+    free_vector(res);
     free(line);
     return bool;
 }
@@ -91,7 +91,7 @@ static int test_lexline(char *line, char **d, enum token_type *t, enum token_typ
         bool &= test_tokendata(resat, d[i], t[i], ts[i]);
     }
 
-    // free_vector(res);
+    free_vector(res);
     return bool;
 }
 
@@ -153,5 +153,8 @@ int test_lex()
         EXTERNAL, STDOUT_TRUNC, SPEC_NONE, STDOUT_APPEND, SPEC_NONE};
     bool &= ASSERT(test_lexline(line, *d, *t, *ts, 12));
 
+    free(d);
+    free(t);
+    free(ts);
     return bool;
 }

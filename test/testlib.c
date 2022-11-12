@@ -9,14 +9,14 @@
 
 int test(int (*f)(), const char *name)
 {
-	printf("[TEST] %s()...\n", name);
+	printf("[TEST] %s...\n", name);
 	const clock_t tic = clock();
 	int res = f();
 	const time_t toc = clock();
 	const double delta = ((double)toc - tic) * 1000.0 / CLOCKS_PER_SEC;
 	if (res)
 	{
-		printf("[%sPASSED%s] %s() in %f ms \n\n", C_GREEN, C_CLEAR, name, delta);
+		printf("[%sPASSED%s] %s in %f ms \n\n", C_GREEN, C_CLEAR, name, delta);
 	}
 	return res;
 }

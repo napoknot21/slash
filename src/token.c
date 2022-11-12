@@ -2,8 +2,7 @@
 #include "token.h"
 #include "string.h"
 
-// TODO: A Remplacer par string
-token *token_new(const char *data, enum token_type type, enum token_type_spec type_spec)
+token *make_token(const char *data, enum token_type type, enum token_type_spec type_spec)
 {
     token *new = malloc(sizeof(token));
     if (new == NULL)
@@ -21,12 +20,20 @@ token *token_new(const char *data, enum token_type type, enum token_type_spec ty
     return new;
 }
 
-void token_free(void *t)
+void free_token(token *t)
 {
     if (t == NULL)
     {
         return;
     }
-    free_string(((token *)t)->data);
+    u_free_token(t);
     free(t);
+}
+
+void u_free_token(void *t) {
+    if (t == NULL) 
+    {
+        return;
+    }
+    free_string(((token *)t)->data);
 }
