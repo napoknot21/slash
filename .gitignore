@@ -1,7 +1,7 @@
 build/
 *.o
 slash
-slash_test
+*slash_test
 *.d
 .vscode/
 .json

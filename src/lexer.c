@@ -4,12 +4,43 @@
 #include "vector.h"
 #include "map.h"
 
+/**
+ * Check if the next token will be a command.
+ * @param last Represent the last computed token
+*/
 static int isnextcmd(token *last);
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+ * @param len The data length
+*/
 static enum token_type_spec computeredirect(const char *data, size_t len);
+/**
+ * Compute the token type from the type specification.
+ * @param type The token type specification
+*/
 static enum token_type computetype(enum token_type_spec type);
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+*/
 static enum token_type_spec computedirectone(const char *data);
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+*/
 static enum token_type_spec computedirecttwo(const char *data);
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+*/
 static enum token_type_spec computedirectthree(const char *data);
+/**
+ * Build the right token according to the given string and 
+ * the last computed token.
+ * @param str The token content
+ * @param last The last computed token
+*/
 static token *buildtoken(const char *str, token *last);
 static char *cpy(char *src);
 
