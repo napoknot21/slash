@@ -82,5 +82,6 @@ token *token_new(const char *data, enum token_type type, enum token_type_spec ty
  *
  * @param *t The token that will be freed
  */
-void token_free(token *t);
+void token_free(void *t);
+
 #endif
