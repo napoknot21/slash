@@ -84,11 +84,16 @@ string * substr(string * str, size_t from, size_t to)
 	}
 
 	to = to > str_s ? str_s : to;
-	char * sub = malloc(to - from);
+	char * sub = malloc(to - from + 1);
+
+	sub[to - from] = 0x0;
 
 	memmove(sub, (void*)((char*)(str->cnt->data + from)), to - from);
+	string * substr = make_string(sub);
+
+	free(sub);
 	
-	return make_string(sub);
+	return substr;
 }
 
 size_t size_str(string * str)

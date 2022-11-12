@@ -12,7 +12,7 @@ typedef struct string
  * Construction/Destruction functions
  */
 
-string * make_string();
+string * make_string(const char *);
 void free_string(string *);
 
 /*

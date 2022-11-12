@@ -21,9 +21,9 @@ void free_data(vector * vec)
 	{
 		for(size_t k = 0; k < vec->size; k++)
 		{
-			vec->free(vec->data + k);
+			vec->free(vec->data + k * vec->elem_s);
 		}
-	}
+	}	
 }
 
 void free_vector(vector * vec)
@@ -85,6 +85,8 @@ void clear(vector * vec)
 {
 	free_data(vec);
 	memset(vec->data, 0x0, vec->elem_s * vec->size);
+
+	vec->size = 0;
 }
 
 void * front(vector * vec)

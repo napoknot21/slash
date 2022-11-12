@@ -9,14 +9,13 @@
 
 int vector_tests()
 {	
-	long iterations = rand() % 0xffff;
+	long iterations = 1 + rand() % 0xffff;
 
 	vector * vec = make_vector(sizeof(long), NULL);	
+	int ass = 1;
 
 	for(long k = 0; k < iterations; k++)
-	{
-		int ass = 1;
-
+	{	
 		push_back(vec, &k);
 		long el = *(long*) at(vec, vec->size - 1);
 
@@ -28,10 +27,13 @@ int vector_tests()
 			ass &= pel == el;
 		}
 
-		if(!ass) return ASSERT(0);
+		if(!ass) break;
 	}
 
-	return ASSERT(1);
+	clear(vec);
+	ass &= !vec->size;
+
+	return ass;
 }
 
 int string_tests()
