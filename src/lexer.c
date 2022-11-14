@@ -83,7 +83,7 @@ static enum token_type_spec computedirecttwo(const char *data)
         }
 
     case '2':
-        return (data[1] == '>') ? ERROUT : SPEC_NONE;
+        return (data[1] == '>') ? STDERR : SPEC_NONE;
     case '&':
         return (data[1] == '&') ? AND : SPEC_NONE;
     case '|':
@@ -102,9 +102,9 @@ static enum token_type_spec computedirectthree(const char *data)
     switch (data[2])
     {
     case '|':
-        return ERROUT_TRUNC;
+        return STDERR_TRUNC;
     case '>':
-        return ERROUT_APPEND;
+        return STDERR_APPEND;
     default:
         return SPEC_NONE;
     }
@@ -141,9 +141,9 @@ static enum token_type computetype(enum token_type_spec type)
     case STDOUT:
     case STDOUT_APPEND:
     case STDOUT_TRUNC:
-    case ERROUT:
-    case ERROUT_APPEND:
-    case ERROUT_TRUNC:
+    case STDERR:
+    case STDERR_APPEND:
+    case STDERR_TRUNC:
         return REDIRECT;
     default:
         return ARG;
@@ -187,9 +187,9 @@ static char *cpy(char *src)
     return line;
 }
 
-vector *lex(char *prompt)
+vector *lex(char *line)
 {
-    char *line = cpy(prompt);
+    line = cpy(line);
     char *delimeters = " ";
     vector *tokens = make_vector(sizeof(token), u_free_token);
     token *last = NULL;

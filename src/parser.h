@@ -8,6 +8,6 @@
  * 
  * @param tokens The tokens vector from the lexer
 */
-static void parse(vector *tokens){}; // TODO
+void parse(vector *tokens); // TODO
 
 #endif

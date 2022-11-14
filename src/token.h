@@ -32,9 +32,9 @@ enum token_type_spec
     STDOUT,
     STDOUT_TRUNC,
     STDOUT_APPEND,
-    ERROUT,
-    ERROUT_TRUNC,
-    ERROUT_APPEND,
+    STDERR,
+    STDERR_TRUNC,
+    STDERR_APPEND,
     PIPE,
 
     /**

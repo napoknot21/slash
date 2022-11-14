@@ -1,3 +1,4 @@
+.PHONY: all test run clean
 #Compilation variables
 CC = gcc
 CFLAGS = -Wall -std=c11 -MMD -Wextra
@@ -25,8 +26,6 @@ TARGET_OBJECT = $(BUILD_DIR)/$(SRC_DIR)/$(TARGET).o
 #Binaries dependencies
 DEPENDENCIES = $(OBJECT:%.o=%.d) $(TEST_OBJECTS:%.o=%.d) $(TARGET_OBJECT:%.o:%.d)
 
--include $(DEPENDENCIES)
-
 
 #JOBS
 all: $(TARGET)
@@ -40,11 +39,10 @@ test: $(TEST_TARGET)
 $(TARGET):  $(TARGET_OBJECT) $(OBJECTS)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)  $(LDLIBS)
 
-$(BUILD_DIR)/$(TARGET).o: $(OBJECTS)
-	@$(CC) $(CFLAGS) $^ -o $(TARGET)  $(LDLIBS)
-
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 	@$(CC) $(CFLAGS) -o $(TEST_TARGET) $^ 
+
+-include $(DEPENDENCIES)
 	
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D) 

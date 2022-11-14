@@ -103,9 +103,9 @@ int test_token()
     bool &= ASSERT(test_newtoken(">", REDIRECT, STDOUT));
     bool &= ASSERT(test_newtoken(">|", REDIRECT, STDOUT_TRUNC));
     bool &= ASSERT(test_newtoken(">>", REDIRECT, STDOUT_APPEND));
-    bool &= ASSERT(test_newtoken("2>", REDIRECT, ERROUT));
-    bool &= ASSERT(test_newtoken("2>|", REDIRECT, ERROUT_TRUNC));  // ERROR
-    bool &= ASSERT(test_newtoken("2>>", REDIRECT, ERROUT_APPEND)); // ERROR
+    bool &= ASSERT(test_newtoken("2>", REDIRECT, STDERR));
+    bool &= ASSERT(test_newtoken("2>|", REDIRECT, STDERR_TRUNC));  // ERROR
+    bool &= ASSERT(test_newtoken("2>>", REDIRECT, STDERR_APPEND)); // ERROR
     bool &= ASSERT(test_newtoken("|", REDIRECT, PIPE));
     bool &= ASSERT(test_newtoken("I'm", ARG, SPEC_NONE));
     bool &= ASSERT(test_newtoken("I'", ARG, SPEC_NONE));
@@ -138,7 +138,7 @@ int test_lex()
     line = "cmd arg 2> file";
     *d = (char *[]){"cmd", "arg", "2>", "file"};
     *t = (enum token_type[]){CMD, ARG, REDIRECT, ARG};
-    *ts = (enum token_type_spec[]){EXTERNAL, SPEC_NONE, ERROUT, SPEC_NONE};
+    *ts = (enum token_type_spec[]){EXTERNAL, SPEC_NONE, STDERR, SPEC_NONE};
     bool &= ASSERT(test_lexline(line, *d, *t, *ts, 4));
 
     line = "cmd arg arg | cmd arg | cmd >| file >> log";
