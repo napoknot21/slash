@@ -3,7 +3,7 @@ image: gcc
 stages:
   - build
   - test
-  - memcheck
+  #- memcheck
   - cleanup
 
 build:
@@ -44,7 +44,7 @@ test slash 2/2:
       - "build/src/.o*"
       - "slash"
 
-memcheck 1/2:
+.memcheck 1/2:
   stage: memcheck
   script:
     - echo "Memcheck slash avec script du cours"
@@ -57,7 +57,7 @@ memcheck 1/2:
       - "build/src/.o*"
       - "slash"
 
-memcheck 2/2:
+.memcheck 2/2:
   stage: memcheck
   script:
     - echo "Memcheck test_slash"
