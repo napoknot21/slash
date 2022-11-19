@@ -7,7 +7,7 @@ stages:
   - cleanup
 
 .install-utils: &install-utils
-    - apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
+    apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
 
 build:
   stage: build
@@ -58,7 +58,7 @@ memcheck-script:
   stage: memcheck
   before_script:
     - *install-utils
-    - - apt update -yqq && apt install -yqq valgrind
+    - apt update -yqq && apt install -yqq valgrind
   script:
     - echo "Memcheck slash avec script du cours"
     - echo "valgrind --leak-check=full --show-leak-kinds=all ./test.sh [TODO]"
