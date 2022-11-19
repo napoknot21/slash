@@ -5,19 +5,20 @@
 #include "token.h"
 #include "vector.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 static int compute_cmd(token *tok, vector *args, int iscmd);
-static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
-			    int *fderr);
-static int compute_pipe(token *tok, vector *args, int *fdin, int *pout,
-			int *iscmd);
-static int compute_operator(token *tok, vector *args, int *iscmd);
+//static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
+//			    int *fderr);
+//static int compute_pipe(token *tok, vector *args, int *fdin, int *pout,
+//			int *iscmd);
+//static int compute_operator(token *tok, vector *args, int *iscmd);
 static int compute_args(token *tok, vector *args);
-static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout);
-static int exec_internal(vector *args, int fdout, int fderr);
-static int exec_external(vector *args, int fdin, int fdout, int fderr);
+//static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout);
+//static int exec_internal(vector *args, int fdout, int fderr);
+//static int exec_external(vector *args, int fdin, int fdout, int fderr);
 
 static int compute_cmd(token *tok, vector *args, int iscmd)
 {
@@ -31,29 +32,29 @@ static int compute_cmd(token *tok, vector *args, int iscmd)
 	return 0;
 }
 
-static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
+/*static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
 			    int *fderr)
 {
-	/*switch(tok->type_spec) { //Generer le fd selon STDIN, STDOUT, STDERR
-	(PAS DE PIPE) default: return 1;
-	}*/
+	//switch(tok->type_spec) { //Generer le fd selon STDIN, STDOUT, STDERR
+	//(PAS DE PIPE) default: return 1;
+	//}
 	perror("redirect");
 	return 0;
-}
+}*/
 
-static int compute_pipe(token *tok, vector *args, int *fdin, int *pout,
+/*static int compute_pipe(token *tok, vector *args, int *fdin, int *pout,
 			int *iscmd)
 {
 	// Changer valeur fdin, pout (open pipe)
 	perror("pipe");
 	return 0;
-}
+}*/
 
-static int compute_operator(token *tok, vector *args, int *iscmd)
+/*static int compute_operator(token *tok, vector *args, int *iscmd)
 {
 	perror("operator");
 	return 0;
-}
+}*/
 
 static int compute_args(token *tok, vector *args)
 {
@@ -65,16 +66,16 @@ static int compute_args(token *tok, vector *args)
 	return 0;
 }
 
-static int exec_internal(vector *args, int fdout, int fderr)
+/*static int exec_internal(vector *args, int fdout, int fderr)
 {
 	// token *cmd = at(args,0);
 	// findcommand
 	// appel fonction (args, fdout);
 	perror("internal");
 	return 0;
-}
+}*/
 
-static int exec_external(vector *args, int fdin, int fdout, int fderr)
+/*static int exec_external(vector *args, int fdin, int fdout, int fderr)
 {
 	// token *cmd = at(args, 0);
 	// fork
@@ -82,9 +83,9 @@ static int exec_external(vector *args, int fdin, int fdout, int fderr)
 	// etc
 	perror("external");
 	return 0;
-}
+}*/
 
-static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout)
+/*static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout)
 {
 	perror("exec");
 	token *cmd = at(args, 0);
@@ -104,7 +105,7 @@ static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout)
 		clear(args);
 	}
 	return ret;
-}
+}*/
 
 /*
 Seules conditions pour exec sont PIPE et EOL (end of line)
@@ -139,11 +140,11 @@ exec() -> function
 
 int parse(vector *tokens)
 {
-	int fdin = STDIN_FILENO;
-	int fdout = STDOUT_FILENO;
-	int fderr = STDERR_FILENO;
+	//int fdin = STDIN_FILENO;
+	//int fdout = STDOUT_FILENO;
+	//int fderr = STDERR_FILENO;
 	int iscmd = 0;
-	int pout = -1;
+	//int pout = -1;
 	int ret = 0;
 	vector *args = make_vector(sizeof(token), NULL);
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
@@ -155,33 +156,33 @@ int parse(vector *tokens)
 			break;
 		case REDIRECT:
 			if (tok->type_spec == PIPE) {
-				ret = compute_pipe(tok, args, &fdin, &pout,
-						   &iscmd);
+			//	ret = compute_pipe(tok, args, &fdin, &pout,
+			//			   &iscmd);
 				break;
 			}
 			if (i + 1 >= args->size) {
 				ret = -1;
 				break;
 			}
-			token *file = at(tokens, i + 1);
-			ret = compute_redirect(tok, file, &fdin, &fdout,
-					       &fderr);
+			//token *file = at(tokens, i + 1);
+			//ret = compute_redirect(tok, file, &fdin, &fdout,
+			//		       &fderr);
 
 			break;
 		case ARG:
 			ret = compute_args(tok, args);
 			break;
 		case OPERATOR:
-			compute_operator(tok, args, &iscmd);
+			//compute_operator(tok, args, &iscmd);
 			break;
 		default:
 			ret = -1;
 			break;
 		}
 	}
-	if (exec(args, &fdin, &fdout, &fderr, &pout) != 0) {
-		// raise error
-	};
+	//if (exec(args, &fdin, &fdout, &fderr, &pout) != 0) {
+	//	// raise error
+	//};
 	free_vector(args);
 	return (ret && slasherrno == 0) ? 0 : 1;
 }

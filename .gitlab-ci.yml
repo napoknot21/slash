@@ -1,84 +1,101 @@
-image: gcc
+image: debian
 
 stages:
   - build
   - test
-  #- memcheck
+  - memcheck
   - cleanup
+
+.install-utils: &install-utils
+  - apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
 
 build:
   stage: build
+  before_script:
+    - *install-utils
   script:
     - make
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: push
     paths:
-      - "build/src/*.o"
-      - "slash"
+      - build/src/*.o
+      - slash
 
-test slash 1/2:
+test-slash:
   stage: test
+  before_script:
+    - *install-utils
   script:
     - make test
   coverage: '/Code coverage: \d+\.\d+/'
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: pull-push
     paths:
-      - "build/src/*.o"
-      - "build/test/*.o"
-      - "build/test/test_slash"
+      - build/src/*.o
+      - build/test/*.o
+      - test/test_slash
 
-
-test slash 2/2:
+test-script:
   stage: test
+  before_script:
+    - *install-utils
   script:
     - echo "./test.sh [TODO]"
   allow_failure: true
   coverage: '/Code coverage: \d+\.\d+/'
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: pull
     paths:
-      - "build/src/.o*"
-      - "slash"
+      - build/src/.o*
+      - slash
 
-.memcheck 1/2:
+memcheck-script:
   stage: memcheck
+  before_script:
+    - *install-utils
+    - - apt update -yqq && apt install -yqq valgrind
   script:
     - echo "Memcheck slash avec script du cours"
     - echo "valgrind --leak-check=full --show-leak-kinds=all ./test.sh [TODO]"
   allow_failure: true
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: pull
     paths:
-      - "build/src/.o*"
-      - "slash"
+      - build/src/.o*
+      - slash
 
-.memcheck 2/2:
+memcheck-test-slash:
   stage: memcheck
+  before_script:
+    - *install-utils
+    - apt update -yqq && apt install -yqq valgrind
   script:
+    - apt-get update -qq && apt-get install -y -qq valgrind
     - echo "Memcheck test_slash"
     - valgrind --leak-check=full --show-leak-kinds=all ./test/test_slash
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: pull
     paths:
-      - "build/src/.o*"
-      - "build/test/.o*"
-      - "builds/test/test_slash"
+      - build/src/.o*
+      - build/test/.o*
+      - test/test_slash
 
 cleanup:
   stage: cleanup
+  before_script:
+    - apt update -yqq && apt install -yqq make
   script:
     - make clean
   cache:
-    key: "$CI_COMMIT_REF_NAME"
+    key: $CI_COMMIT_REF_NAME
     policy: pull-push
     paths:
-      - "build/src/.o*"
-      - "build/test/.o*"
-      - "builds/test/test_slash"
-      - "slash"
+      - build/src/.o*
+      - build/test/.o*
+      - test/test_slash
+      - slash
