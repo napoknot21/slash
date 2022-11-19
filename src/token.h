@@ -5,59 +5,57 @@
 /**
  * Define the token type
  */
-enum token_type
-{
-    CMD,      // Command
-    REDIRECT, // Redirection
-    ARG,      // Argument
-    OPERATOR, // Operator
-    TYPE_NONE // Default type
+enum token_type {
+	CMD,	  // Command
+	REDIRECT, // Redirection
+	ARG,	  // Argument
+	OPERATOR, // Operator
+	TYPE_NONE // Default type
 };
 
 /**
- * Define a specification for the type. Each specification is for a specific type.
+ * Define a specification for the type. Each specification is for a specific
+ * type.
  */
-enum token_type_spec
-{
-    /**
-     * CMD specification
-     */
-    INTERNAL,
-    EXTERNAL,
+enum token_type_spec {
+	/**
+	 * CMD specification
+	 */
+	INTERNAL,
+	EXTERNAL,
 
-    /**
-     * REDIRECT specification
-     */
-    STDIN,
-    STDOUT,
-    STDOUT_TRUNC,
-    STDOUT_APPEND,
-    STDERR,
-    STDERR_TRUNC,
-    STDERR_APPEND,
-    PIPE,
+	/**
+	 * REDIRECT specification
+	 */
+	STDIN,
+	STDOUT,
+	STDOUT_TRUNC,
+	STDOUT_APPEND,
+	STDERR,
+	STDERR_TRUNC,
+	STDERR_APPEND,
+	PIPE,
 
-    /**
-     * OPERATOR specification
-     */
-    AND,
-    OR,
-    SEMICOLON,
+	/**
+	 * OPERATOR specification
+	 */
+	AND,
+	OR,
+	SEMICOLON,
 
-    /**
-     * ARG specification
-     */
-    SPEC_NONE
+	/**
+	 * ARG specification
+	 */
+	SPEC_NONE
 };
 
 /**
  * Lexer's token
  */
-typedef struct token
-{
-    string *data;                   // token value
-    enum token_type type;           // token type
-    enum token_type_spec type_spec; // type specification
+typedef struct token {
+	string *data;			// token value
+	enum token_type type;		// token type
+	enum token_type_spec type_spec; // type specification
 } token;
 
 /**
@@ -67,7 +65,8 @@ typedef struct token
  * @param type The token's type
  * @param type_spec The token's type specification
  */
-token *make_token(const char *data, enum token_type type, enum token_type_spec type_spec);
+token *make_token(const char *data, enum token_type type,
+		  enum token_type_spec type_spec);
 
 /**
  * Free a token and its value.

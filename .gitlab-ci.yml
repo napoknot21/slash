@@ -1,27 +1,84 @@
 image: gcc
 
 stages:
- - build
- - test
-
+  - build
+  - test
+  - memcheck
+  - cleanup
 
 build:
   stage: build
   script:
-  - echo make [TODO]
+    - make
   cache:
     key: "$CI_COMMIT_REF_NAME"
     policy: push
-    paths: 
-    - "*.o"
+    paths:
+      - "build/src/*.o"
+      - "slash"
 
-test:
+test slash 1/2:
   stage: test
   script:
     - make test
+  coverage: '/Code coverage: \d+\.\d+/'
   cache:
-      key: "$CI_COMMIT_REF_NAME"
-      policy: pull
-      paths:
-        - "*.o"
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull-push
+    paths:
+      - "build/src/*.o"
+      - "build/test/*.o"
+      - "build/test/test_slash"
 
+
+test slash 2/2:
+  stage: test
+  script:
+    - echo "./test.sh [TODO]"
+  allow_failure: true
+  coverage: '/Code coverage: \d+\.\d+/'
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - "build/src/.o*"
+      - "slash"
+
+memcheck 1/2:
+  stage: memcheck
+  script:
+    - echo "Memcheck slash avec script du cours"
+    - echo "valgrind --leak-check=full --show-leak-kinds=all ./test.sh [TODO]"
+  allow_failure: true
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - "build/src/.o*"
+      - "slash"
+
+memcheck 2/2:
+  stage: memcheck
+  script:
+    - echo "Memcheck test_slash"
+    - valgrind --leak-check=full --show-leak-kinds=all ./test/test_slash
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - "build/src/.o*"
+      - "build/test/.o*"
+      - "builds/test/test_slash"
+
+cleanup:
+  stage: cleanup
+  script:
+    - make clean
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull-push
+    paths:
+      - "build/src/.o*"
+      - "build/test/.o*"
+      - "builds/test/test_slash"
+      - "slash"

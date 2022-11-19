@@ -1,10 +1,11 @@
+#include "../src/string.h"
+#include "../src/vector.h"
+#include "test_lexer.h"
+#include "testlib.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "testlib.h"
-#include "../src/vector.h"
-#include "test_lexer.h"
-#include "../src/string.h"
 
 int vector_tests()
 {
@@ -13,15 +14,13 @@ int vector_tests()
 	vector *vec = make_vector(sizeof(long), NULL);
 	int ass = 1;
 
-	for (long k = 0; k < iterations; k++)
-	{
+	for (long k = 0; k < iterations; k++) {
 		push_back(vec, &k);
 		long el = *(long *)at(vec, vec->size - 1);
 
 		ass &= el == k;
 
-		if ((k & 2) == 0)
-		{
+		if ((k & 2) == 0) {
 			long *pel = (long *)pop_back(vec);
 			ass &= *pel == el;
 			free(pel);
@@ -42,8 +41,7 @@ int string_tests()
 	long ch_s = rand() % 0xff;
 	char *ch = malloc(ch_s);
 
-	for (size_t k = 0; k < (size_t)ch_s - 1; k++)
-	{
+	for (size_t k = 0; k < (size_t)ch_s - 1; k++) {
 		*(ch + k) = rand() % 0x80;
 	}
 
@@ -57,10 +55,8 @@ int string_tests()
 
 	string *sub = substr(str, alpha, beta);
 
-	for (size_t k = 0; k < beta - alpha; k++)
-	{
-		if (*at_str(str, alpha + k) != *at_str(sub, k))
-		{
+	for (size_t k = 0; k < beta - alpha; k++) {
+		if (*at_str(str, alpha + k) != *at_str(sub, k)) {
 			free_string(str);
 			free(sub);
 			free(ch);

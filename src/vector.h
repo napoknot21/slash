@@ -5,14 +5,13 @@
 
 #define VECTOR_DEFAULT_CAPACITY 32
 
-typedef struct vector
-{
+typedef struct vector {
 	size_t capacity;
 	size_t size;
 	size_t elem_s;
 
-	void * data;
-	void (*free)(void*);
+	void *data;
+	void (*free)(void *);
 
 } vector;
 
@@ -20,7 +19,7 @@ typedef struct vector
  * Construction/Destruction functions
  */
 
-vector * make_vector(size_t, void (*)(void*));
+vector *make_vector(size_t, void (*)(void *));
 void free_vector(vector *);
 
 /*
@@ -28,7 +27,7 @@ void free_vector(vector *);
  */
 
 int push_back(vector *, void *);
-void * pop_back(vector *);
+void *pop_back(vector *);
 
 void reserve(vector *, size_t);
 void clear(vector *);
@@ -37,8 +36,8 @@ void clear(vector *);
  * Access function
  */
 
-void * at(vector *, size_t);
-void * front(vector *);
-void * back(vector *);
+void *at(vector *, size_t);
+void *front(vector *);
+void *back(vector *);
 
 #endif

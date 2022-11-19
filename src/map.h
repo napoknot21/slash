@@ -1,31 +1,24 @@
 #ifndef MAP_H
 #define MAP_H
-
+#include <stddef.h>
 #define DEFAULT_MAP_SIZE 16
 #define HASH_DATA_OFFSET 1
 #define STOCHASTIC_SHIFT 4
 
-enum map_element_status 
-{
-	EMPTY, 
-	FILLED, 
-	NONE
-};
+enum map_element_status { EMPTY, FILLED, NONE };
 
-typedef struct map_element 
-{
+typedef struct map_element {
 	enum map_element_status status;
 	int keyhash;
-	void * val;
+	void *val;
 
 } map_element;
 
-typedef struct map
-{
+typedef struct map {
 	size_t capacity;
 	size_t size;
 
-	map_element * data;
+	map_element *data;
 	size_t elem_size;
 
 	double alpha;
@@ -40,8 +33,8 @@ typedef struct map
  * Construction/Destruction functions
  */
 
-map * make_map(size_t);
-void free_map(map * m);
+map *make_map(size_t);
+void free_map(map *m);
 
 /*
  * Operation functions
@@ -55,7 +48,7 @@ void resize_map(map *);
  * Access functions
  */
 
-void * at_map(int, map *);
+void *at_map(int, map *);
 
 /*
  * Auxiliaries

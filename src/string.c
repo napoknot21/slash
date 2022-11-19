@@ -1,17 +1,17 @@
 #include "string.h"
-#include <string.h>
-#include <stdio.h>
 
-string * make_string(const char * ch)
-{	
-	string * str = malloc(sizeof(struct string));
+#include <stdio.h>
+#include <string.h>
+
+string *make_string(const char *ch)
+{
+	string *str = malloc(sizeof(struct string));
 	str->cnt = make_vector(sizeof(char), NULL);
 
-	if(ch)
-	{
-		size_t ch_s = strlen(ch);	
+	if (ch) {
+		size_t ch_s = strlen(ch);
 
-		reserve(str->cnt, ch_s * 2);	
+		reserve(str->cnt, ch_s * 2);
 		memmove(str->cnt->data, ch, ch_s);
 
 		str->cnt->size += ch_s;
@@ -20,98 +20,94 @@ string * make_string(const char * ch)
 	return str;
 }
 
-void free_string(string * str)
+void free_string(string *str)
 {
 	free_vector(str->cnt);
 	free(str);
 }
 
-void push_back_str(string * str, char c)
+void push_back_str(string *str, char c)
 {
 	push_back(str->cnt, &c);
 }
 
-void pop_back_str(string * str)
+void pop_back_str(string *str)
 {
 	pop_back(str->cnt);
 }
 
-void append(string * dst, string * src)
+void append(string *dst, string *src)
 {
 	size_t src_s = src->cnt->size;
 	size_t dst_s = dst->cnt->size;
 
-	size_t ncap = dst->cnt->capacity;	
+	size_t ncap = dst->cnt->capacity;
 
-	while(dst_s + src_s >= ncap)
-	{
+	while (dst_s + src_s >= ncap) {
 		ncap *= 2;
 	}
 
-	reserve(dst->cnt, ncap);		
+	reserve(dst->cnt, ncap);
 
-	memmove((void*)((char*) (dst->cnt->data + dst_s)), src->cnt->data, src_s);
+	memmove((void *)((char *)(dst->cnt->data + dst_s)), src->cnt->data,
+		src_s);
 	dst->cnt->size += src_s;
 }
 
-void clear_str(string * str)
+void clear_str(string *str)
 {
 	clear(str->cnt);
 }
 
-char * at_str(string * str, size_t pos)
+char *at_str(string *str, size_t pos)
 {
-	return (char*) at(str->cnt, pos);
+	return (char *)at(str->cnt, pos);
 }
 
-char * front_str(string * str)
+char *front_str(string *str)
 {
-	return (char*) front(str->cnt);
+	return (char *)front(str->cnt);
 }
 
-char * back_str(string * str)
+char *back_str(string *str)
 {
-	return (char*) back(str->cnt);
+	return (char *)back(str->cnt);
 }
 
-string * substr(string * str, size_t from, size_t to)
+string *substr(string *str, size_t from, size_t to)
 {
 	size_t str_s = str->cnt->size;
 
-	if(from >= str_s || to <= from)
-	{
+	if (from >= str_s || to <= from) {
 		return NULL;
 	}
 
 	to = to > str_s ? str_s : to;
-	char * sub = malloc(to - from + 1);
+	char *sub = malloc(to - from + 1);
 
 	sub[to - from] = 0x0;
 
-	memmove(sub, (void*)((char*)(str->cnt->data + from)), to - from);
-	string * substr = make_string(sub);
+	memmove(sub, (void *)((char *)(str->cnt->data + from)), to - from);
+	string *substr = make_string(sub);
 
 	free(sub);
-	
+
 	return substr;
 }
 
-size_t size_str(string * str)
+size_t size_str(string *str)
 {
 	return str->cnt->size;
 }
 
-int cmp_str(string * str_a, string * str_b)
+int cmp_str(string *str_a, string *str_b)
 {
-	if(size_str(str_a) != size_str(str_b)) 
-	{
+	if (size_str(str_a) != size_str(str_b)) {
 		return 0;
 	}
 
-	for(size_t k = 0; k < str_a->cnt->size; k++)
-	{
-		if(*at_str(str_a, k) != *at_str(str_b, k))
-		{
+	for (size_t k = 0; k < str_a->cnt->size; k++) {
+		if (*at_str(str_a, k) != *at_str(str_b, k)) {
 			return 0;
 		}
 	}

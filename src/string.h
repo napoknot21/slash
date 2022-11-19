@@ -3,16 +3,15 @@
 
 #include "vector.h"
 
-typedef struct string
-{
-	vector * cnt;
+typedef struct string {
+	vector *cnt;
 } string;
 
 /*
  * Construction/Destruction functions
  */
 
-string * make_string(const char *);
+string *make_string(const char *);
 void free_string(string *);
 
 /*
@@ -29,13 +28,13 @@ void clear_str(string *);
  * Access function
  */
 
-char * at_str(string *, size_t);
-char * front_str(string *);
-char * back_str(string *);
+char *at_str(string *, size_t);
+char *front_str(string *);
+char *back_str(string *);
 
-string * substr(string *, size_t, size_t);
+string *substr(string *, size_t, size_t);
 size_t size_str(string *);
 
 int cmp_str(string *, string *);
 
-#endif 
+#endif
