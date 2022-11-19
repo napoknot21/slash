@@ -7,7 +7,7 @@ stages:
   - cleanup
 
 .install-utils: &install-utils
-  - apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
+    - apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
 
 build:
   stage: build
@@ -37,7 +37,8 @@ test-slash:
       - build/test/*.o
       - test/test_slash
 
-test-script:
+
+test-script :
   stage: test
   before_script:
     - *install-utils
@@ -51,6 +52,7 @@ test-script:
     paths:
       - build/src/.o*
       - slash
+
 
 memcheck-script:
   stage: memcheck
