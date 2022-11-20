@@ -1,3 +1,4 @@
+#include "internals.h"
 #include "map.h"
 #include "token.h"
 #include "vector.h"
@@ -154,8 +155,7 @@ static token *buildtoken(const char *str, token *last)
 			return NULL; // TODO print err selon le token
 		}
 		type = CMD;
-		int hashmap_get = 0;
-		type_spec = (hashmap_get) ? INTERNAL : EXTERNAL;
+		type_spec = (is_internal(str)) ? INTERNAL : EXTERNAL;
 	}
 	token *t = make_token(str, type, type_spec);
 	return t;

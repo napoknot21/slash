@@ -57,14 +57,19 @@ int string_tests()
 
 	for (size_t k = 0; k < beta - alpha; k++) {
 		if (*at_str(str, alpha + k) != *at_str(sub, k)) {
-			free_string(str);
-			free(sub);
-			free(ch);
+			if (str != NULL)
+				free_string(str);
+			if (sub != NULL)
+				free(sub);
+			if (ch != NULL)
+				free(ch);
 			return ASSERT(0);
 		}
 	}
-	free_string(str);
-	free_string(sub);
+	if (str != NULL)
+		free_string(str);
+	if (sub != NULL)
+		free_string(sub);
 	free(ch);
 	return ASSERT(1);
 }

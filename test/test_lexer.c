@@ -97,15 +97,15 @@ static int test_lexline(char *line, char **d, enum token_type *t,
 int test_token()
 {
 	int bool = 1;
-	bool &= ASSERT(test_newtokencmd(
-		"ls", CMD, EXTERNAL)); // Valid for EXTERNAL //Error
+	bool &= ASSERT(test_newtokencmd("ls", CMD, EXTERNAL));
+	bool &= ASSERT(test_newtokencmd("pwd", CMD, INTERNAL));
 	bool &= ASSERT(test_newtoken("<", REDIRECT, STDIN));
 	bool &= ASSERT(test_newtoken(">", REDIRECT, STDOUT));
 	bool &= ASSERT(test_newtoken(">|", REDIRECT, STDOUT_TRUNC));
 	bool &= ASSERT(test_newtoken(">>", REDIRECT, STDOUT_APPEND));
 	bool &= ASSERT(test_newtoken("2>", REDIRECT, STDERR));
-	bool &= ASSERT(test_newtoken("2>|", REDIRECT, STDERR_TRUNC));  // ERROR
-	bool &= ASSERT(test_newtoken("2>>", REDIRECT, STDERR_APPEND)); // ERROR
+	bool &= ASSERT(test_newtoken("2>|", REDIRECT, STDERR_TRUNC));
+	bool &= ASSERT(test_newtoken("2>>", REDIRECT, STDERR_APPEND));
 	bool &= ASSERT(test_newtoken("|", REDIRECT, PIPE));
 	bool &= ASSERT(test_newtoken("I'm", ARG, SPEC_NONE));
 	bool &= ASSERT(test_newtoken("I'", ARG, SPEC_NONE));
