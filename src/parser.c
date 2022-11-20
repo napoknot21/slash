@@ -9,18 +9,18 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static int compute_cmd(token *tok, vector *args, int iscmd);
+static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 // static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
 //			    int *fderr);
 // static int compute_pipe(token *tok, vector *args, int *fdin, int *pout,
 //			int *iscmd);
 // static int compute_operator(token *tok, vector *args, int *iscmd);
-static int compute_args(token *tok, vector *args);
+static int compute_args(struct token *tok, struct vector *args);
 // static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout);
 // static int exec_internal(vector *args, int fdout, int fderr);
 // static int exec_external(vector *args, int fdin, int fdout, int fderr);
 
-static int compute_cmd(token *tok, vector *args, int iscmd)
+static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 {
 	if (iscmd || tok->type_spec != INTERNAL || tok->type_spec != EXTERNAL) {
 		// raise error
@@ -56,7 +56,7 @@ static int compute_cmd(token *tok, vector *args, int iscmd)
 	return 0;
 }*/
 
-static int compute_args(token *tok, vector *args)
+static int compute_args(struct token *tok, struct vector *args)
 {
 	// if has joker
 	// then computejoker(tok,arg)
@@ -140,7 +140,7 @@ exec() -> function
 	is pipe = false
 */
 
-int parse(vector *tokens)
+int parse(struct vector *tokens)
 {
 	// int fdin = STDIN_FILENO;
 	// int fdout = STDOUT_FILENO;
@@ -148,9 +148,9 @@ int parse(vector *tokens)
 	int iscmd = 0;
 	// int pout = -1;
 	int ret = 0;
-	vector *args = make_vector(sizeof(token), NULL);
+	vector *args = make_vector(sizeof(*args), NULL);
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
-		token *tok = at(tokens, i);
+		struct token *tok = at(tokens, i);
 		switch (tok->type) {
 		case CMD:
 			ret = compute_cmd(tok, args, iscmd) == 0;

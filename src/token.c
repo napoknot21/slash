@@ -4,10 +4,10 @@
 
 #include <stdlib.h>
 
-token *make_token(const char *data, enum token_type type,
-		  enum token_type_spec type_spec)
+struct token *make_token(const char *data, enum token_type type,
+			 enum token_type_spec type_spec)
 {
-	token *new = malloc(sizeof(token));
+	struct token *new = malloc(sizeof(*new));
 	if (new == NULL) {
 		return NULL;
 	}
@@ -21,7 +21,7 @@ token *make_token(const char *data, enum token_type type,
 	return new;
 }
 
-void free_token(token *t)
+void free_token(struct token *t)
 {
 	if (t == NULL) {
 		return;
@@ -35,5 +35,5 @@ void u_free_token(void *t)
 	if (t == NULL) {
 		return;
 	}
-	free_string(((token *)t)->data);
+	free_string(((struct token *)t)->data);
 }

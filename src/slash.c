@@ -55,7 +55,7 @@ int main()
 	while ((line = readline(prompt)) != NULL) {
 		free(prompt);
 		add_history(line);
-		vector *tokens = lex(line);
+		struct vector *tokens = lex(line);
 		free(line);
 		if (tokens == NULL) {
 			retval = 1;
@@ -63,6 +63,9 @@ int main()
 		}
 		retval = parse(tokens);
 		free_vector(tokens);
+		// if (retval != 0) {
+		//	break;
+		//}
 		prompt = compute_prompt();
 	}
 	rl_clear_history();

@@ -10,7 +10,7 @@
  * Check if the next token will be a command.
  * @param last Represent the last computed token
  */
-static int isnextcmd(token *last);
+static int isnextcmd(struct token *last);
 /**
  * Compute the token type specification from the data.
  * @param data The data that will be computed
@@ -43,10 +43,10 @@ static enum token_type_spec computedirectthree(const char *data);
  * @param str The token content
  * @param last The last computed token
  */
-static token *buildtoken(const char *str, token *last);
+static struct token *buildtoken(const char *str, struct token *last);
 static char *cpy(char *src);
 
-static int isnextcmd(token *last)
+static int isnextcmd(struct token *last)
 {
 	return last == NULL || last->type_spec == PIPE ||
 	       last->type == OPERATOR;
@@ -145,7 +145,7 @@ static enum token_type computetype(enum token_type_spec type)
 	}
 }
 
-static token *buildtoken(const char *str, token *last)
+static struct token *buildtoken(const char *str, struct token *last)
 {
 	enum token_type_spec type_spec = computeredirect(str, strlen(str));
 	enum token_type type = computetype(type_spec);
@@ -157,7 +157,7 @@ static token *buildtoken(const char *str, token *last)
 		type = CMD;
 		type_spec = (is_internal(str)) ? INTERNAL : EXTERNAL;
 	}
-	token *t = make_token(str, type, type_spec);
+	struct token *t = make_token(str, type, type_spec);
 	return t;
 }
 
@@ -180,15 +180,15 @@ vector *lex(char *line)
 {
 	line = cpy(line);
 	char *delimeters = " ";
-	vector *tokens = make_vector(sizeof(token), u_free_token);
-	token *last = NULL;
+	vector *tokens = make_vector(sizeof(*tokens), u_free_token);
+	struct token *last = NULL;
 	if (tokens == NULL) {
 		goto error;
 	}
 
 	char *tmp = strtok(line, delimeters);
 	while (tmp != NULL) {
-		token *tok = buildtoken(tmp, last);
+		struct token *tok = buildtoken(tmp, last);
 
 		if (tok == NULL) {
 			goto error;

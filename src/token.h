@@ -52,11 +52,11 @@ enum token_type_spec {
 /**
  * Lexer's token
  */
-typedef struct token {
-	string *data;			// token value
+struct token {
+	struct string *data;		// token value
 	enum token_type type;		// token type
 	enum token_type_spec type_spec; // type specification
-} token;
+};
 
 /**
  * Initialize a new token according to the data, type and type_spec.
@@ -65,15 +65,15 @@ typedef struct token {
  * @param type The token's type
  * @param type_spec The token's type specification
  */
-token *make_token(const char *data, enum token_type type,
-		  enum token_type_spec type_spec);
+struct token *make_token(const char *data, enum token_type type,
+			 enum token_type_spec type_spec);
 
 /**
  * Free a token and its value.
  *
  * @param *t The token that will be freed
  */
-void free_token(token *t);
+void free_token(struct token *t);
 void u_free_token(void *t);
 
 #endif

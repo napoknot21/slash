@@ -8,6 +8,6 @@
  *
  * @param line The line that will be cut into tokens
  */
-vector *lex(char *line);
+struct vector *lex(char *line);
 
 #endif

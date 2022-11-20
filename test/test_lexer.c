@@ -17,7 +17,7 @@ static int isequaltmp(char *a, string *b)
 	return strcmp(a, res) == 0;
 }
 
-static int test_tokendata(token *t, char *str, enum token_type type,
+static int test_tokendata(struct token *t, char *str, enum token_type type,
 			  enum token_type_spec spec)
 {
 	int bool = 1;
@@ -31,13 +31,13 @@ static int test_newtokencmd(char *str, enum token_type type,
 			    enum token_type_spec spec)
 {
 
-	vector *res = lex(str);
+	struct vector *res = lex(str);
 	if (res == NULL) {
 		perror("lex");
 		ASSERT(0);
 		return 0;
 	}
-	token *t = at(res, res->size - 1);
+	struct token *t = at(res, res->size - 1);
 	int bool = test_tokendata(t, str, type, spec);
 	free_vector(res);
 	return bool;
@@ -62,13 +62,13 @@ static int test_newtoken(char *str, enum token_type type,
 		free(line);
 		return 1;
 	}
-	vector *res = lex(line);
+	struct vector *res = lex(line);
 	if (res == NULL) {
 		perror("lex");
 		ASSERT(0);
 		return 0;
 	}
-	token *t = at(res, res->size - 1);
+	struct token *t = at(res, res->size - 1);
 	int bool = test_tokendata(t, str, type, spec);
 	free_vector(res);
 	free(line);
@@ -79,14 +79,14 @@ static int test_lexline(char *line, char **d, enum token_type *t,
 			enum token_type_spec *ts, size_t len)
 {
 	int bool = 1;
-	vector *res = lex(line);
+	struct vector *res = lex(line);
 	if (res == NULL) {
 		ASSERT(0);
 		return 0;
 	}
 	bool &= ASSERT(len == res->size);
 	for (size_t i = 0; i < len; i++) {
-		token *resat = at(res, i);
+		struct token *resat = at(res, i);
 		bool &= test_tokendata(resat, d[i], t[i], ts[i]);
 	}
 
