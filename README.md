@@ -1,5 +1,3 @@
-# slash
-
 # Projet : programmation d'un interpréteur de commandes
 
 **L3 Informatique - Système**
@@ -43,8 +41,13 @@ sur une ligne de commande `slash` :
 
 ##### `exit [val]` 
 
-Termine le processus `slash` avec comme valeur de retour `val` (ou 0 par
-défaut).
+Termine le processus `slash` avec comme valeur de retour `val` ~~(ou 0 par
+défaut)~~ (ou par défaut la valeur de retour de la dernière commande
+exécutée).
+
+Lorsqu'il atteint la fin de son entrée standard (ie si l'utilisateur
+saisit `ctrl-D` en mode interactif), `slash` se comporte comme si la
+commande interne `exit` (sans paramètre) avait été saisie.
 
 ##### `pwd [-L | -P]`
 
@@ -139,7 +142,8 @@ indications de couleur), et est formé des éléments suivants :
 - un code de bascule de couleur, `"\033[32m"` (vert) ou `"\033[91m"`
   (rouge) suivant que la dernière commande exécutée a réussi ou échoué;
 - entre crochets, la **valeur de retour** de la dernière commande
-  exécutée (0 par défaut pour le premier prompt); 
+  exécutée (0 par défaut pour le premier prompt) ou `"SIG"` si elle a été
+  interrompue par un signal;
 - une autre bascule de couleur, par exemple `"\033[34m"` (bleu) ou
   `"\033[36m"` (cyan);
 - la référence (logique) du **répertoire courant**, éventuellement
@@ -147,6 +151,12 @@ indications de couleur), et est formé des éléments suivants :
   dans ce cas la référence commencera par trois points (`"..."`);  
 - la bascule `"\033[00m"` (retour à la normale);  
 - un dollar puis un espace (`"$ "`).  
+
+Pour que l'affichage s'adapte correctement à la géométrie de la fenêtre,
+chaque bascule de couleur doit être entourée des balises `'\001'` et
+`'\002'` (qui indiquent que la portion de chaîne qu'elles délimitent est
+formée de caractères non imprimables et doit donc être ignorée dans le
+calcul de la longueur du texte à afficher).
 
 Par exemple (sans la coloration) :
 ```bash
@@ -232,11 +242,19 @@ redirections additionnelles sont autorisées :
 - redirection de la sortie standard de `cmdn`
 - redirection des sorties erreurs des `n` commandes
 
+En cas d'échec d'une redirection, la ligne de commande saisie n'est pas
+exécutée, et la valeur de retour est 1.
+
 
 ### Sensibilité aux signaux
 
 `slash` ignore les signaux `SIGINT` et `SIGTERM`, contrairement aux
 processus exécutant des commandes externes.
+
+Lorsque l'exécution d'une commande est interrompue par la réception d'un
+signal, le prompt commence par la chaîne `"[SIG]"` en lieu et place de la
+valeur de retour, qui est considérée comme valant 255 au cas où un appel 
+à `exit` sans paramètre (ou un `ctrl-D`) suit.
 
 
 ## Modalités de réalisation (et de test)
@@ -336,5 +354,4 @@ déséquilibrée.
 **En particulier, un étudiant n'ayant aucun commit sur les aspects
 réellement "système" du code et incapable de répondre de manière
 satisfaisante sera noté "DEF".**
-
 

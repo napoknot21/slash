@@ -28,7 +28,6 @@ test-slash:
     - *install-utils
   script:
     - make test
-  coverage: '/Code coverage: \d+\.\d+/'
   cache:
     key: $CI_COMMIT_REF_NAME
     policy: pull-push
@@ -43,9 +42,8 @@ test-script :
   before_script:
     - *install-utils
   script:
-    - echo "./test.sh [TODO]"
+    - ./test.sh
   allow_failure: true
-  coverage: '/Code coverage: \d+\.\d+/'
   cache:
     key: $CI_COMMIT_REF_NAME
     policy: pull
@@ -61,7 +59,7 @@ memcheck-script:
     - apt update -yqq && apt install -yqq valgrind
   script:
     - echo "Memcheck slash avec script du cours"
-    - echo "valgrind --leak-check=full --show-leak-kinds=all ./test.sh [TODO]"
+    - valgrind --leak-check=full --show-leak-kinds=all ./test.sh
   allow_failure: true
   cache:
     key: $CI_COMMIT_REF_NAME
