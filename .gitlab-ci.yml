@@ -41,6 +41,7 @@ test-script :
   stage: test
   before_script:
     - *install-utils
+    - apt update -yqq && apt install -yqq git
   script:
     - ./test.sh
   allow_failure: true
@@ -56,7 +57,7 @@ memcheck-script:
   stage: memcheck
   before_script:
     - *install-utils
-    - apt update -yqq && apt install -yqq valgrind
+    - apt update -yqq && apt install -yqq valgrind git
   script:
     - echo "Memcheck slash avec script du cours"
     - valgrind --leak-check=full --show-leak-kinds=all ./test.sh
