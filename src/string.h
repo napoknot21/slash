@@ -23,6 +23,7 @@ void free_string(struct string *);
 void push_back_str(struct string *, char);
 void pop_back_str(struct string *);
 void append(struct string *, struct string *);
+void append_cstr(struct string *, const char *);
 
 void clear_str(struct string *);
 struct vector * split_str(struct string *, char);

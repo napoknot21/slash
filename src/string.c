@@ -57,6 +57,14 @@ void append(struct string *dst, struct string *src)
 	dst->cnt->size += src_s;
 }
 
+void append_cstr(struct string * dst, const char * src)
+{
+	struct string * tstr = make_string(src);
+	append(dst, tstr);
+
+	free_string(tstr);
+}
+
 void clear_str(struct string *str)
 {
 	clear(str->cnt);

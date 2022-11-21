@@ -22,7 +22,11 @@ struct string * normalize_path(struct string * path, struct string * wd)
 
 	/*
 	 * This is a relative path to working directory
-	 */
+	 */	
+
+	push_back_str(wd, '/');
+
+	if(*back_str(path) != '/') push_back_str(path, '/');
 
 	struct vector * wd_split = split_str(wd, '/');
 	struct vector * path_split = split_str(path, '/');
@@ -64,7 +68,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	for(size_t i = 0; i < wd_split->size; i++) {
 
 		append(res, at(wd_split, i));
-		push_back_str(res, '/');
+		if(i + 1 < wd_split->size) push_back_str(res, '/');
 
 	}
 

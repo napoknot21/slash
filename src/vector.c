@@ -18,10 +18,15 @@ struct vector *make_vector(size_t elem_s, void (*free)(void *))
 
 void free_data(struct vector *vec)
 {
-	if (vec->free) {
-		for (size_t k = 0; k < vec->size; k++) {
-			vec->free(vec->data + k * vec->elem_s);
-		}
+	if (!vec->free) return;
+
+	for (size_t k = 0; k < vec->size; k++) {
+		
+		void * el = (void*)((char*) vec->data + k * vec->elem_s);
+		if(!el) continue;
+
+		vec->free(el);
+	
 	}
 }
 

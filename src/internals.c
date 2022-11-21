@@ -20,15 +20,22 @@ int is_internal(const char *cmd)
 void *get_fonction(struct string *cmd)
 {
 	size_t inlen = sizeof(internals) / sizeof(internals[0]);
+	char * s = malloc(cmd->cnt->size + 1);
+
+	void * res = NULL;
+
 	for (size_t i = 0; i < inlen; i++) {
-		char s[cmd->cnt->size+1];
+
 		memcpy(s,front_str(cmd), cmd->cnt->size);
 		s[cmd->cnt->size] = '\0';
-		if (strcmp(internals[i].name, s) == 0) {
-			free(s);
-			return internals[i].cmd;
+
+		if (strcmp(internals[i].name, s) == 0) {	
+			break;
+			res = internals[i].cmd;
 		}
-		free(s);
 	}
-	return NULL;
+
+	free(s);
+
+	return res;
 }

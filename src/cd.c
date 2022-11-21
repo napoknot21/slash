@@ -7,7 +7,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdio.h>
 
 int cd(int in, int out, int argc, char ** argv)
 {
@@ -22,7 +21,7 @@ int cd(int in, int out, int argc, char ** argv)
 	 * 	- physical path (-P)
 	 */		
 
-	for(size_t k = 1; k < argc; k++) {	
+	for(int k = 1; k < argc; k++) {	
 
 		if(!strcmp(argv[k], "-L")) {
 		
@@ -37,41 +36,89 @@ int cd(int in, int out, int argc, char ** argv)
 			path = argv[k];
 			break;		
 		}
-	}	
+	}		
 
 	struct string * path_str = make_string(path),
-		      * pwd_str  = make_string(pwd);
+		      * pwd_str  = make_string(pwd);	
 
-	struct string * dir = normalize_path(path_str, pwd_str);
-	const char * ab = c_str(dir);	
+	struct string * dir = normalize_path(path_str, pwd_str);	
 
 	/*
 	 * We check whether that directory exists,
 	 * or is a symlink
 	 */
 
-	const char * dir_cstr = c_str(dir);
-	int fd = open(dir_cstr, 0);
+	const char * dir_cstr = c_str(dir);	
+
+	struct stat dirstat;
+	int stat_s = lstat(dir_cstr, &dirstat);
+
+	/*
+	 * Failed to retrieve informations on the node
+	 */
+
+	if(stat_s == -1) {
+
+		write(out, "cd: That directory does not exist!\n", 36);
+		return STATUS_CD_ERROR;
+
+	}
+
+	mode_t dirmode = dirstat.st_mode;
+
+	/*
+	 * Not a directory
+	 */
+
+	int symlink = S_ISLNK(dirmode);
+
+	if(!S_ISDIR(dirmode) && !symlink) {
+	
+		write(out, "cd: Not a directory!\n", 22);
+		return STATUS_CD_ERROR;
+
+	}	
+
+	const char * phys_dir_cstr = dir_cstr;
+	if(symlink && kind == PHYSICAL_PATH) {	
+
+		/*
+		 * We seek the physical path
+		 */
+
+		char buff[PHYSICAL_PATH_BUFFER];
+		memset(buff, 0x0, PHYSICAL_PATH_BUFFER);
+
+		ssize_t rds = readlink(dir_cstr, buff, PHYSICAL_PATH_BUFFER);
+
+		if(rds < 0) {
+
+			/*
+			 * Broken symlink
+			 */
+
+			write(out, "cd: The symbolic link is broken!\n", 34);
+			return STATUS_CD_ERROR;
+
+		}
+
+		struct string * phys_dir_str = make_string(NULL);	
+
+		append(phys_dir_str, pwd_str);
+		append_cstr(phys_dir_str, buff);
+
+		phys_dir_cstr = c_str(phys_dir_str);	
+
+		free_string(phys_dir_str);
+		free(phys_dir_str);
+	}
 
 	free_string(path_str);
 	free_string(pwd_str);
-/*
-	free_string(dir);
-*/
-	int status = STATUS_CD_SUCCESS;
 
-	/*
-	 * That path does not exist
-	 */
+	free_string(dir);	
+	
+	setenv("PWD", phys_dir_cstr, 1);
 
-	if(fd == -1) {
-		status = STATUS_CD_ERROR;
-		perror("cd: ");
-	} else {	
-		setenv("PWD", dir_cstr, 1);
-	}
-
-	close(fd);
-
-	return status;
+	return STATUS_CD_SUCCESS;
 }
