@@ -1,4 +1,5 @@
 #include "internals.h"
+#include "slasherrno.h"
 #include <stdio.h>
 
 int builtin_exit(int in, int out, int argc, char ** argv)
@@ -12,7 +13,7 @@ int builtin_exit(int in, int out, int argc, char ** argv)
 		return STATUS_EXIT_ERROR;
 	}
 
-	char code = MAX_EXIT_VAL;
+	short code = slasherrno;
 
 	if(argc == 2) {
 
@@ -28,7 +29,7 @@ int builtin_exit(int in, int out, int argc, char ** argv)
 			return STATUS_EXIT_ERROR;
 		}
 
-		code = (char) scode;
+		code = (short) scode;
 
 	}
 
