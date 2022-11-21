@@ -10,7 +10,7 @@
 #define ESIG 255
 #define EOBOUND 255
 
-extern int slasherrno;
+extern short slasherrno;
 char *get_error();
 
 #endif
