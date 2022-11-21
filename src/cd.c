@@ -22,7 +22,7 @@ int cd(int in, int out, int argc, char ** argv)
 	 * 	- physical path (-P)
 	 */		
 
-	for(int k = 1; k < argc; k++) {
+	for(size_t k = 1; k < argc; k++) {	
 
 		if(!strcmp(argv[k], "-L")) {
 		
@@ -34,16 +34,16 @@ int cd(int in, int out, int argc, char ** argv)
 		
 		}
 		else {
-		
 			path = argv[k];
-				
+			break;		
 		}
-	}
+	}	
 
 	struct string * path_str = make_string(path),
 		      * pwd_str  = make_string(pwd);
 
 	struct string * dir = normalize_path(path_str, pwd_str);
+	const char * ab = c_str(dir);	
 
 	/*
 	 * We check whether that directory exists,
@@ -55,9 +55,9 @@ int cd(int in, int out, int argc, char ** argv)
 
 	free_string(path_str);
 	free_string(pwd_str);
-
+/*
 	free_string(dir);
-
+*/
 	int status = STATUS_CD_SUCCESS;
 
 	/*
@@ -67,7 +67,7 @@ int cd(int in, int out, int argc, char ** argv)
 	if(fd == -1) {
 		status = STATUS_CD_ERROR;
 		perror("cd: ");
-	} else {
+	} else {	
 		setenv("PWD", dir_cstr, 1);
 	}
 
