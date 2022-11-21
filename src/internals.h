@@ -9,15 +9,15 @@
 
 #include "string.h"
 
+#define INTERNAL_NULL ((struct internal){"", NULL})
+
 struct internal {
 	char *name;
 	int (*cmd)(int fdout, int fderr, int argc, char **argv);
 };
 
-extern struct internal internals[];
-
 int is_internal(const char *cmd);
-void *get_fonction(struct string *cmd);
+struct internal get_internal(struct string *cmd);
 
 int builtin_cd(int, int, int, char **);
 int builtin_exit(int, int, int, char **);

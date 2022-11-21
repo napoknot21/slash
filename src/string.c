@@ -17,7 +17,7 @@ struct string *make_string(const char *ch)
 		str->cnt->size += ch_s;
 	} else {
 
-		reserve(str->cnt, 32);	
+		reserve(str->cnt, 32);
 	}
 
 	return str;
@@ -124,20 +124,20 @@ int cmp_str(struct string *str_a, struct string *str_b)
 	return 0;
 }
 
-const char *c_str(struct string *str)
+char *c_str(struct string *str)
 {
 	if(!str) return NULL;
 
-	size_t size = size_str(str);	
-	char * data = malloc(size + 1);	
+	size_t size = size_str(str);
+	char * data = malloc(size + 1);
 
 	*(data + size) = 0x0;
 
 	for(size_t k = 0; k < size; k++) {
-		data[k] = *at_str(str, k);	
+		data[k] = *at_str(str, k);
 	}
 
-	return (const char *) data;
+	return (char *) data;
 }
 
 int empty_str(struct string *str)
@@ -148,20 +148,20 @@ int empty_str(struct string *str)
 struct vector * split_str(struct string *str, char sep)
 {
 	size_t k = 0, beg = 0;
-	size_t str_s = size_str(str);	
+	size_t str_s = size_str(str);
 
 	struct vector * svec = make_vector(sizeof(struct string), (void (*)(void*)) free_string);
 
 	for(; k < str_s; k++) {
-		
-		char curr = *at_str(str, k);	
+
+		char curr = *at_str(str, k);
 
 		if(curr == sep) {
 
 			struct string * sub = substr(str, beg, k);
 			if(empty_str(sub)) push_back(svec, sub);
 
-			beg = k + 1;	
+			beg = k + 1;
 		}
 
 	}

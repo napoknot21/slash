@@ -4,9 +4,9 @@
 #include "vector.h"
 
 struct string {
-	
+
 	struct vector *cnt;
-	
+
 };
 
 /*
@@ -41,6 +41,6 @@ size_t size_str(struct string *);
 int empty_str(struct string *);
 
 int cmp_str(struct string *, struct string *);
-const char * c_str(struct string *);
+char * c_str(struct string *);
 
 #endif

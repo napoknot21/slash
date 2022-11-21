@@ -1,7 +1,7 @@
 .PHONY: all test run clean
 #Compilation variables
 CC = gcc
-CFLAGS = -Wall -std=gnu11 -MMD -Wextra
+CFLAGS = -Wall -std=gnu11 -MMD -Wextra -ggdb
 LDLIBS = -lreadline -lc
 
 #Executable name
@@ -40,15 +40,15 @@ $(TARGET):  $(TARGET_OBJECT) $(OBJECTS)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)  $(LDLIBS)
 
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
-	@$(CC) $(CFLAGS) -o $(TEST_TARGET) $^ 
+	@$(CC) $(CFLAGS) -o $(TEST_TARGET) $^
 
 -include $(DEPENDENCIES)
-	
+
 $(BUILD_DIR)/%.o: %.c
-	@mkdir -p $(@D) 
-	@$(CC) $(CFLAGS) -o $@ -c $< 
+	@mkdir -p $(@D)
+	@$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	@rm -rf $(BUILD_DIR) 
+	@rm -rf $(BUILD_DIR)
 	@rm -f $(TARGET) $(TEST_TARGET)
 

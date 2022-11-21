@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include "internals.h"
 #include "slasherrno.h"
 #include "string.h"
 #include "token.h"
@@ -9,7 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 // static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
 //			    int *fderr);
@@ -17,19 +17,46 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 //			int *iscmd);
 // static int compute_operator(token *tok, vector *args, int *iscmd);
 static int compute_args(struct token *tok, struct vector *args);
-// static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout);
-// static int exec_internal(vector *args, int fdout, int fderr);
+static int exec(struct vector *args, int *fdout, int *fderr);
+static int exec_internal(struct vector *args, int fdout, int fderr);
+static char **convertstr(struct vector *args);
+static void free_argv(char **argv, size_t size);
 // static int exec_external(vector *args, int fdin, int fdout, int fderr);
 
+static char **convertstr(struct vector *args)
+{
+	char **argv = calloc(sizeof(*argv), args->size + 1);
+	if (argv == NULL) {
+		return NULL;
+	}
+	for (size_t i = 0; i < args->size; i++) {
+		struct token *tok = at(args, i);
+		argv[i] = (char *)c_str(tok->data);
+		if (argv[i] == NULL) {
+			free_argv(argv, i);
+			return NULL;
+		}
+	}
+	return argv;
+}
+
+static void free_argv(char **argv, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		if (argv[i] != NULL)
+			free(argv[i]);
+	}
+	free(argv);
+}
 
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 {
-	if (iscmd || tok->type_spec != INTERNAL || tok->type_spec != EXTERNAL) {
+	if (iscmd || (tok->type_spec != INTERNAL && tok->type_spec != EXTERNAL)) {
 		// raise error
-		slasherrno = 1;
+		printf("error cmd");
+		slasherrno = EFAIL;
 		return 1;
 	}
-	perror("cmd");
 	push_back(args, tok);
 	return 0;
 }
@@ -63,21 +90,27 @@ static int compute_args(struct token *tok, struct vector *args)
 	// if has joker
 	// then computejoker(tok,arg)
 	// else
-	perror("pushback");
 	push_back(args, tok);
 	return 0;
 }
 
-/*static int exec_internal(vector *args, int fdout, int fderr)
+static int exec_internal(struct vector *args, int fdout, int fderr)
 {
-	// token *cmd = at(args,0);
-	int (*cmd)(int fdout, int fderr, int argc, char **argv) =
-get_fonction(cmd->data)
-	// appel fonction (args, fdout);
-
-	perror("internal");
-	return 0;
-}*/
+	struct token *name = at(args, 0);
+	struct internal c = get_internal(name->data);
+	char **argv = convertstr(args);
+	if (c.cmd == NULL) {
+		slasherrno = ENOCMD;
+		return 1;
+	}
+	if (argv == NULL) {
+		slasherrno = EFAIL;
+		return 1;
+	}
+	int ret = c.cmd(fdout, fderr, (int)args->size, argv);
+	free_argv(argv, args->size);
+	return ret;
+}
 
 /*static int exec_external(vector *args, int fdin, int fdout, int fderr)
 {
@@ -89,10 +122,10 @@ get_fonction(cmd->data)
 	return 0;
 }*/
 
-/*static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout)
+static int exec(struct vector *args, int *fdout, int *fderr)
 {
 	perror("exec");
-	token *cmd = at(args, 0);
+	struct token *cmd = at(args, 0);
 	if (cmd == NULL) {
 		return -1;
 	}
@@ -100,8 +133,7 @@ get_fonction(cmd->data)
 	switch (cmd->type_spec) {
 	case INTERNAL:
 		ret = exec_internal(args, *fdout, *fderr);
-	case EXTERNAL:
-		ret = exec_external(args, *fdin, *fdout, *fderr);
+		break;
 	default:
 		return 1;
 	}
@@ -109,7 +141,7 @@ get_fonction(cmd->data)
 		clear(args);
 	}
 	return ret;
-}*/
+}
 
 /*
 Seules conditions pour exec sont PIPE et EOL (end of line)
@@ -145,8 +177,8 @@ exec() -> function
 int parse(struct vector *tokens)
 {
 	// int fdin = STDIN_FILENO;
-	// int fdout = STDOUT_FILENO;
-	// int fderr = STDERR_FILENO;
+	int fdout = STDOUT_FILENO;
+	int fderr = STDERR_FILENO;
 	int iscmd = 0;
 	// int pout = -1;
 	int ret = 0;
@@ -186,9 +218,7 @@ int parse(struct vector *tokens)
 			break;
 		}
 	}
-	// if (exec(args, &fdin, &fdout, &fderr, &pout) != 0) {
-	//	// raise error
-	//};
+	ret = exec(args, &fdout, &fderr);
 	free_vector(args);
 	return (ret && slasherrno == 0) ? 0 : 1;
 }

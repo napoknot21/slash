@@ -23,7 +23,7 @@ static char *compute_prompt();
 static char *compute_prompt()
 {
 	int color_len = strlen(C_RED);
-	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len + 1));
+	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len + 100));
 	if (p == NULL) {
 		slasherrno = 1;
 		return NULL;
@@ -34,13 +34,13 @@ static char *compute_prompt()
 	sprintf(err, "%d", slasherrno);
 	size_t pwdlen = strlen(pwd);
 	size_t errlen = strlen(err);
-	char *format = "[%s%d%s]%s%s%s%s$ ";
-	if (pwdlen + 8 + errlen > PROMPT_SIZE) {
-		char *tmp = pwd + pwdlen - PROMPT_SIZE + 8;
-		sprintf(p, format, color, slasherrno, C_CLEAR, C_CYAN, "...",
+	char *format = "[%s%s%s]%s%s%s%s$ ";
+	if (pwdlen + 7 + errlen > PROMPT_SIZE) {
+		char *tmp = pwd + pwdlen - PROMPT_SIZE + 7;
+		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...",
 			tmp, C_CLEAR);
 	} else {
-		sprintf(p, format, color, slasherrno, C_CLEAR, C_CYAN, pwd,
+		sprintf(p, format, color, err, C_CLEAR, C_CYAN, pwd,
 			C_CLEAR);
 	}
 	return p;
@@ -69,5 +69,6 @@ int main()
 		prompt = compute_prompt();
 	}
 	rl_clear_history();
+	printf("\n");
 	return retval;
 }
