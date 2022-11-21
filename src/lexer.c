@@ -180,10 +180,10 @@ struct vector *lex(char *line)
 {
 	line = cpy(line);
 	char *delimeters = " ";
-	
-	struct vector *tokens = make_vector(sizeof(*tokens), u_free_token);
+
+	struct vector *tokens = make_vector(sizeof(struct token), u_free_token);
 	struct token *last = NULL;
-	
+
 	if (tokens == NULL) {
 		goto error;
 	}

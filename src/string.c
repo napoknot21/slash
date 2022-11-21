@@ -29,6 +29,10 @@ void free_string(struct string *str)
 	free(str);
 }
 
+void u_free_string(struct string *str) {
+	free_vector(str->cnt);
+}
+
 void push_back_str(struct string *str, char c)
 {
 	push_back(str->cnt, &c);

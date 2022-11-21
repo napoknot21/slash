@@ -60,6 +60,7 @@ memcheck-test-slash:
   script:
     - apt-get update -qq && apt-get install -y -qq valgrind
     - echo "Memcheck test_slash"
+    - make test &> dev/null
     - valgrind --leak-check=full --show-leak-kinds=all ./test/test_slash
   cache:
     key: $CI_COMMIT_REF_NAME

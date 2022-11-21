@@ -15,6 +15,7 @@ struct string {
 
 struct string *make_string(const char *);
 void free_string(struct string *);
+void u_free_string(struct string *str);
 
 /*
  * Operation functions

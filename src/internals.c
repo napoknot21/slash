@@ -4,7 +4,8 @@
 
 #include <string.h>
 
-struct internal internals[] = {{"cd", cd}, {"pwd", NULL}, {"exit", NULL}};
+struct internal internals[] = {
+	{"cd", builtin_cd}, {"pwd", NULL}, {"exit", builtin_exit}};
 
 int is_internal(const char *cmd)
 {
@@ -20,10 +21,6 @@ int is_internal(const char *cmd)
 struct internal get_internal(struct string *cmd)
 {
 	size_t inlen = sizeof(internals) / sizeof(internals[0]);
-	char * s = malloc(cmd->cnt->size + 1);
-
-	void * res = NULL;
-
 	for (size_t i = 0; i < inlen; i++) {
 		char *s = c_str(cmd);
 		if (strcmp(internals[i].name, s) == 0) {

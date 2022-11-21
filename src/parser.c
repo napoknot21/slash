@@ -17,7 +17,7 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 //			int *iscmd);
 // static int compute_operator(token *tok, vector *args, int *iscmd);
 static int compute_args(struct token *tok, struct vector *args);
-static int exec(struct vector *args, int *fdout, int *fderr);
+static int exec(struct vector *args, int fdout, int fderr);
 static int exec_internal(struct vector *args, int fdout, int fderr);
 static char **convertstr(struct vector *args);
 static void free_argv(char **argv, size_t size);
@@ -51,14 +51,16 @@ static void free_argv(char **argv, size_t size)
 
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 {
-	if (iscmd || (tok->type_spec != INTERNAL && tok->type_spec != EXTERNAL)) {
+	if (iscmd ||
+	    (tok->type_spec != INTERNAL && tok->type_spec != EXTERNAL)) {
 		// raise error
 		printf("error cmd");
 		slasherrno = EFAIL;
 		return 1;
 	}
-	push_back(args, tok);
-	return 0;
+
+	return push_back(args, tok);
+	;
 }
 
 /*static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
@@ -90,8 +92,8 @@ static int compute_args(struct token *tok, struct vector *args)
 	// if has joker
 	// then computejoker(tok,arg)
 	// else
-	push_back(args, tok);
-	return 0;
+
+	return push_back(args, tok);
 }
 
 static int exec_internal(struct vector *args, int fdout, int fderr)
@@ -100,12 +102,10 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 	struct internal c = get_internal(name->data);
 	char **argv = convertstr(args);
 	if (c.cmd == NULL) {
-		slasherrno = ENOCMD;
-		return 1;
+		return ENOCMD;
 	}
 	if (argv == NULL) {
-		slasherrno = EFAIL;
-		return 1;
+		return EFAIL;
 	}
 	int ret = c.cmd(fdout, fderr, (int)args->size, argv);
 	free_argv(argv, args->size);
@@ -122,9 +122,8 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 	return 0;
 }*/
 
-static int exec(struct vector *args, int *fdout, int *fderr)
+static int exec(struct vector *args, int fdout, int fderr)
 {
-	perror("exec");
 	struct token *cmd = at(args, 0);
 	if (cmd == NULL) {
 		return -1;
@@ -132,7 +131,7 @@ static int exec(struct vector *args, int *fdout, int *fderr)
 	int ret = 0;
 	switch (cmd->type_spec) {
 	case INTERNAL:
-		ret = exec_internal(args, *fdout, *fderr);
+		ret = exec_internal(args, fdout, fderr);
 		break;
 	default:
 		return 1;
@@ -140,6 +139,7 @@ static int exec(struct vector *args, int *fdout, int *fderr)
 	if (ret == 0) {
 		clear(args);
 	}
+	slasherrno = ret;
 	return ret;
 }
 
@@ -189,7 +189,7 @@ int parse(struct vector *tokens)
 		struct token *tok = at(tokens, i);
 		switch (tok->type) {
 		case CMD:
-			ret = compute_cmd(tok, args, iscmd) == 0;
+			ret = compute_cmd(tok, args, iscmd);
 			iscmd = (ret == 0);
 			break;
 		case REDIRECT:
@@ -218,7 +218,9 @@ int parse(struct vector *tokens)
 			break;
 		}
 	}
-	ret = exec(args, &fdout, &fderr);
-	free_vector(args);
+	if (ret == 0)
+		ret = exec(args, fdout, fderr);
+	if (args != NULL)
+		free_vector(args);
 	return (ret && slasherrno == 0) ? 0 : 1;
 }
