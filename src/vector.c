@@ -2,9 +2,9 @@
 
 #include <string.h>
 
-vector *make_vector(size_t elem_s, void (*free)(void *))
+struct vector *make_vector(size_t elem_s, void (*free)(void *))
 {
-	vector *vec = malloc(sizeof(struct vector));
+	struct vector *vec = malloc(sizeof(struct vector));
 
 	vec->capacity = VECTOR_DEFAULT_CAPACITY;
 	vec->size = 0;
@@ -16,7 +16,7 @@ vector *make_vector(size_t elem_s, void (*free)(void *))
 	return vec;
 }
 
-void free_data(vector *vec)
+void free_data(struct vector *vec)
 {
 	if (vec->free) {
 		for (size_t k = 0; k < vec->size; k++) {
@@ -25,14 +25,14 @@ void free_data(vector *vec)
 	}
 }
 
-void free_vector(vector *vec)
+void free_vector(struct vector *vec)
 {
 	free_data(vec);
 	free(vec->data);
 	free(vec);
 }
 
-int push_back(vector *vec, void *data)
+int push_back(struct vector *vec, void *data)
 {
 	if (vec->size >= vec->capacity) {
 		reserve(vec, vec->capacity * 2);
@@ -47,7 +47,7 @@ int push_back(vector *vec, void *data)
 	return 0;
 }
 
-void *pop_back(vector *vec)
+void *pop_back(struct vector *vec)
 {
 	void *elem = NULL;
 
@@ -63,7 +63,7 @@ void *pop_back(vector *vec)
 	return elem;
 }
 
-void *at(vector *vec, size_t i)
+void *at(struct vector *vec, size_t i)
 {
 	if (i >= vec->size) {
 		return NULL;
@@ -72,7 +72,7 @@ void *at(vector *vec, size_t i)
 	return (void *)((char *)(vec->data) + i * vec->elem_s);
 }
 
-void reserve(vector *vec, size_t ncap)
+void reserve(struct vector *vec, size_t ncap)
 {
 	if (ncap <= vec->capacity)
 		return;
@@ -88,7 +88,7 @@ void reserve(vector *vec, size_t ncap)
 	}
 }
 
-void clear(vector *vec)
+void clear(struct vector *vec)
 {
 	free_data(vec);
 	memset(vec->data, 0x0, vec->elem_s * vec->size);
@@ -96,12 +96,12 @@ void clear(vector *vec)
 	vec->size = 0;
 }
 
-void *front(vector *vec)
+void *front(struct vector *vec)
 {
 	return vec->data;
 }
 
-void *back(vector *vec)
+void *back(struct vector *vec)
 {
 	if (!vec->size) {
 		return NULL;

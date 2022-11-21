@@ -1,8 +1,8 @@
 .PHONY: all test run clean
 #Compilation variables
 CC = gcc
-CFLAGS = -Wall -std=c11 -MMD -Wextra
-LDLIBS = -lreadline
+CFLAGS = -Wall -std=gnu11 -MMD -Wextra
+LDLIBS = -lreadline -lc
 
 #Executable name
 TARGET = slash

@@ -17,7 +17,7 @@ int is_internal(const char *cmd)
 	return 0;
 }
 
-void *get_fonction(string *cmd)
+void *get_fonction(struct string *cmd)
 {
 	size_t inlen = sizeof(internals) / sizeof(internals[0]);
 	for (size_t i = 0; i < inlen; i++) {

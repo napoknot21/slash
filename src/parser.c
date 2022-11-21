@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 // static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
 //			    int *fderr);
@@ -19,6 +20,7 @@ static int compute_args(struct token *tok, struct vector *args);
 // static int exec(vector *args, int *fdin, int *fdout, int *fderr, int *pout);
 // static int exec_internal(vector *args, int fdout, int fderr);
 // static int exec_external(vector *args, int fdin, int fdout, int fderr);
+
 
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 {
@@ -148,7 +150,9 @@ int parse(struct vector *tokens)
 	int iscmd = 0;
 	// int pout = -1;
 	int ret = 0;
-	vector *args = make_vector(sizeof(*args), NULL);
+
+	struct vector *args = make_vector(sizeof(*args), NULL);
+
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
 		struct token *tok = at(tokens, i);
 		switch (tok->type) {

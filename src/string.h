@@ -3,38 +3,43 @@
 
 #include "vector.h"
 
-typedef struct string {
-	vector *cnt;
-} string;
+struct string {
+	
+	struct vector *cnt;
+	
+};
 
 /*
  * Construction/Destruction functions
  */
 
-string *make_string(const char *);
-void free_string(string *);
+struct string *make_string(const char *);
+void free_string(struct string *);
 
 /*
  * Operation functions
  */
 
-void push_back_str(string *, char);
-void pop_back_str(string *);
-void append(string *, string *);
+void push_back_str(struct string *, char);
+void pop_back_str(struct string *);
+void append(struct string *, struct string *);
 
-void clear_str(string *);
+void clear_str(struct string *);
+struct vector * split_str(struct string *, char);
 
 /*
  * Access function
  */
 
-char *at_str(string *, size_t);
-char *front_str(string *);
-char *back_str(string *);
+char *at_str(struct string *, size_t);
+char *front_str(struct string *);
+char *back_str(struct string *);
 
-string *substr(string *, size_t, size_t);
-size_t size_str(string *);
+struct string *substr(struct string *, size_t, size_t);
+size_t size_str(struct string *);
+int empty_str(struct string *);
 
-int cmp_str(string *, string *);
+int cmp_str(struct string *, struct string *);
+const char * c_str(struct string *);
 
 #endif

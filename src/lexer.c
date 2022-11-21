@@ -176,12 +176,14 @@ static char *cpy(char *src)
 	return line;
 }
 
-vector *lex(char *line)
+struct vector *lex(char *line)
 {
 	line = cpy(line);
 	char *delimeters = " ";
-	vector *tokens = make_vector(sizeof(*tokens), u_free_token);
+	
+	struct vector *tokens = make_vector(sizeof(*tokens), u_free_token);
 	struct token *last = NULL;
+	
 	if (tokens == NULL) {
 		goto error;
 	}

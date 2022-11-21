@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static int isequaltmp(char *a, string *b)
+static int isequaltmp(char *a, struct string *b)
 {
 	size_t size = size_str(b);
 	char res[size];

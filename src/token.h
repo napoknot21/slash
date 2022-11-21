@@ -52,6 +52,7 @@ enum token_type_spec {
 /**
  * Lexer's token
  */
+
 struct token {
 	struct string *data;		// token value
 	enum token_type type;		// token type

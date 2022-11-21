@@ -3,6 +3,7 @@
 
 #define EREDIRECT 1
 #define EFAIL 1
+#define ECDNOTDIR 63
 #define ENOCMD 127
 #define EACCES 126
 #define EKILL 128
