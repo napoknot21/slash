@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-int cd(int in, int out, int argc, char ** argv)
+int builtin_cd(int in, int out, int argc, char ** argv)
 {
 	char * path = getenv("HOME"),
 	     * pwd  = getenv("PWD");

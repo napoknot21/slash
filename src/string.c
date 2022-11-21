@@ -26,7 +26,7 @@ struct string *make_string(const char *ch)
 void free_string(struct string *str)
 {
 	free_vector(str->cnt);
-//	free(str);
+	free(str);
 }
 
 void push_back_str(struct string *str, char c)

@@ -56,6 +56,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	}
 
 	free(path_split);
+
 	free_string(back_up_str);
 	free_string(curr_str);
 
