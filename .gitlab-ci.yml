@@ -7,7 +7,7 @@ stages:
   - cleanup
 
 .install-utils: &install-utils
-    apt update -yqq && apt install -yqq gcc make libreadline-dev > /dev/null
+    apt update -yqq && apt install -yqq gcc make libreadline-dev &> /dev/null
 
 build:
   stage: build
@@ -41,7 +41,7 @@ test-script :
   stage: test
   before_script:
     - *install-utils
-    - apt update -yqq && apt install -yqq valgrind git
+    - apt update -yqq && apt install -yqq valgrind git &> /dev/null
   script:
     - ./test.sh
   allow_failure: true
@@ -58,9 +58,9 @@ memcheck-test-slash:
     - *install-utils
     - apt update -yqq && apt install -yqq valgrind
   script:
-    - apt-get update -qq && apt-get install -y -qq valgrind
+    - apt-get update -qq && apt-get install -y -qq valgrind &> /dev/null
     - echo "Memcheck test_slash"
-    - make test &> dev/null
+    - make test &> /dev/null
     - valgrind --leak-check=full --show-leak-kinds=all ./test/test_slash
   cache:
     key: $CI_COMMIT_REF_NAME
@@ -73,7 +73,7 @@ memcheck-test-slash:
 cleanup:
   stage: cleanup
   before_script:
-    - apt update -yqq && apt install -yqq make
+    - apt update -yqq && apt install -yqq make &> /dev/null
   script:
     - make clean
   cache:
