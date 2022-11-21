@@ -11,7 +11,7 @@ int vector_tests()
 {
 	long iterations = 1 + rand() % 0xffff;
 
-	vector *vec = make_vector(sizeof(long), NULL);
+	struct vector *vec = make_vector(sizeof(long), NULL);
 	int ass = 1;
 
 	for (long k = 0; k < iterations; k++) {
@@ -47,13 +47,13 @@ int string_tests()
 
 	ch[ch_s - 1] = 0x0;
 
-	string *str = make_string(ch);
+	struct string *str = make_string(ch);
 	append(str, str);
 
 	size_t alpha = rand() % (str->cnt->size - 1);
 	size_t beta = alpha + rand() % (str->cnt->size - alpha);
 
-	string *sub = substr(str, alpha, beta);
+	struct string *sub = substr(str, alpha, beta);
 
 	for (size_t k = 0; k < beta - alpha; k++) {
 		if (*at_str(str, alpha + k) != *at_str(sub, k)) {
