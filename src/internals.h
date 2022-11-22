@@ -24,5 +24,6 @@ struct internal get_internal(struct string *cmd);
 
 int builtin_cd(int, int, int, char **);
 int builtin_exit(int, int, int, char **);
+int builtin_pwd(int, int, int, char **);
 
 #endif

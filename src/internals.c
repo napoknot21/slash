@@ -5,7 +5,7 @@
 #include <string.h>
 
 struct internal internals[] = {
-	{"cd", builtin_cd}, {"pwd", NULL}, {"exit", builtin_exit}};
+	{"cd", builtin_cd}, {"pwd", builtin_pwd}, {"exit", builtin_exit}};
 
 int is_internal(const char *cmd)
 {

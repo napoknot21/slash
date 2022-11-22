@@ -24,7 +24,7 @@ static char *compute_prompt();
 static char *compute_prompt()
 {
 	int color_len = strlen(C_RED);
-	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len + 100));
+	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len));
 	if (p == NULL) {
 		slasherrno = 1;
 		return NULL;
