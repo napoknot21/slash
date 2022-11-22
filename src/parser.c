@@ -60,7 +60,6 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 	}
 
 	return push_back(args, tok);
-	;
 }
 
 /*static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
@@ -124,6 +123,8 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 
 static int exec(struct vector *args, int fdout, int fderr)
 {
+	if (args->size == 0)
+		return slasherrno;
 	struct token *cmd = at(args, 0);
 	if (cmd == NULL) {
 		return -1;
@@ -134,11 +135,10 @@ static int exec(struct vector *args, int fdout, int fderr)
 		ret = exec_internal(args, fdout, fderr);
 		break;
 	default:
-		return 1;
+		slasherrno = ENOCMD;
+		return ENOCMD;
 	}
-	if (ret == 0) {
-		clear(args);
-	}
+	clear(args);
 	slasherrno = ret;
 	return ret;
 }

@@ -8,7 +8,7 @@
 #define STATUS_PWD_ERROR 1
 
 #define MAX_EXIT_VAL 255
-#define STATUS_EXIT_ERROR 256
+#define STATUS_EXIT_ERROR 255
 
 #include "string.h"
 

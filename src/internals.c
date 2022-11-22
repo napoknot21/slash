@@ -27,6 +27,7 @@ struct internal get_internal(struct string *cmd)
 			free(s);
 			return internals[i];
 		}
+		free(s);
 	}
 	return INTERNAL_NULL;
 }

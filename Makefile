@@ -36,13 +36,15 @@ run: $(TARGET)
 test: $(TEST_TARGET)
 	@./$(TEST_TARGET)
 
+-include $(DEPENDENCIES)
+
 $(TARGET):  $(TARGET_OBJECT) $(OBJECTS)
 	@$(CC) $(CFLAGS) $^ -o $(TARGET)  $(LDLIBS)
 
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS)
 	@$(CC) $(CFLAGS) -o $(TEST_TARGET) $^
 
--include $(DEPENDENCIES)
+
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D)

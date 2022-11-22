@@ -20,11 +20,12 @@
 #define EXIT_NAME "exit"
 
 static char *compute_prompt();
+static int is_exit_call(struct token *tok);
 
 static char *compute_prompt()
 {
-	int color_len = strlen(C_RED);
-	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len));
+	int color_len = strlen(C_RED) + 1;
+	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len + 1));
 	if (p == NULL) {
 		slasherrno = 1;
 		return NULL;
@@ -47,6 +48,13 @@ static char *compute_prompt()
 	return p;
 }
 
+static int is_exit_call(struct token *tok) {
+	char *cmd = c_str(tok->data);
+	int ret = strcmp(EXIT_NAME, cmd) == 0;
+	free(cmd);
+	return ret;
+}
+
 int main()
 {
 	char *line;
@@ -62,16 +70,14 @@ int main()
 			break;
 		}
 		parse(tokens);
-		char *cmd = c_str(((struct token *)at(tokens, 0))->data);
-		free_vector(tokens);
-		if (strcmp(EXIT_NAME, cmd) == 0) {
-			free(cmd);
+		if (tokens->size != 0 && is_exit_call(at(tokens,0))) {
+			free_vector(tokens);
 			break;
 		}
-		free(cmd);
+
+		free_vector(tokens);
 		prompt = compute_prompt();
 	}
 	rl_clear_history();
-	// printf("\n");
 	return slasherrno;
 }

@@ -25,7 +25,7 @@ struct string *make_string(const char *ch)
 
 void free_string(struct string *str)
 {
-	if(!str->cnt) return; 
+	if(!str->cnt) return;
 	free_vector(str->cnt);
 	free(str);
 }
@@ -155,7 +155,7 @@ struct vector * split_str(struct string *str, char sep)
 	size_t k = 0, beg = 0;
 	size_t str_s = size_str(str);
 
-	struct vector * svec = make_vector(sizeof(struct string), (void (*)(void*)) free_string);
+	struct vector * svec = make_vector(sizeof(struct string), (void (*)(void*)) u_free_string);
 
 	for(; k < str_s; k++) {
 
@@ -183,7 +183,7 @@ struct string * bind_str(struct vector *vec, char sep)
 
 		append(res, at(vec, i));
 		if(i + 1 < vec->size) push_back_str(res, sep);
-	
+
 	}
 
 	return res;

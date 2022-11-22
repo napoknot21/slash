@@ -10,7 +10,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 		return make_string(c_str(wd));
 	}
 
-	char * fs = front_str(path);	
+	char * fs = front_str(path);
 
 	if(*fs == '/') {
 
@@ -24,7 +24,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 
 	/*
 	 * This is a relative path to working directory
-	 */	
+	 */
 
 	push_back_str(wd, '/');
 
@@ -38,15 +38,15 @@ struct string * normalize_path(struct string * path, struct string * wd)
 
 	/*
 	 * At each .. in path_split we, pop in wd_split
-	 */	
+	 */
 
 	for(size_t i = 0; i < path_split->size; i++) {
 
-		struct string * pith = at(path_split, i);	
+		struct string * pith = at(path_split, i);
 		if(!cmp_str(pith, curr_str)) continue;
 
 		if(!cmp_str(pith, back_up_str)) {
-	
+
 			pop_back(wd_split);
 
 		} else {
@@ -67,7 +67,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	 */
 
 	struct string * res = bind_str(wd_split, '/');
-	
+
 	free(wd_split);
 
 	return res;
