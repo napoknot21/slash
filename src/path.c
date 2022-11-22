@@ -5,7 +5,7 @@
 struct string * normalize_path(struct string * path, struct string * wd)
 {
 	if(!empty_str(path)) {
-		return wd;
+		return make_string(c_str(wd));
 	}
 
 	char * fs = front_str(path);	
@@ -16,7 +16,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 		 * This is an absolute path
 		 */
 
-		return path;
+		return make_string(c_str(path));
 
 	}
 

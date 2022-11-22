@@ -47,6 +47,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	 * or is a symlink
 	 */
 
+
 	const char *dir_cstr = c_str(dir);
 
 	struct stat dirstat;

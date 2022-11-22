@@ -25,6 +25,7 @@ struct string *make_string(const char *ch)
 
 void free_string(struct string *str)
 {
+	if(!str->cnt) return; 
 	free_vector(str->cnt);
 	free(str);
 }
