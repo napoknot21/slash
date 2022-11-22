@@ -155,6 +155,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 
 	free_string(dir);
 
+	lastwd = pwd;
 	setenv("PWD", phys_dir_cstr, 1);	
 
 	return STATUS_CD_SUCCESS;
