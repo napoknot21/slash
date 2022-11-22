@@ -1,6 +1,8 @@
 #include "path.h"
 #include <string.h>
-#include <stdio.h>
+#include <stdlib.h>
+
+const char * lastwd = NULL;
 
 struct string * normalize_path(struct string * path, struct string * wd)
 {
@@ -64,15 +66,8 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	 * Binding of the new wd path
 	 */
 
-	struct string * res = make_string("/");
-
-	for(size_t i = 0; i < wd_split->size; i++) {
-
-		append(res, at(wd_split, i));
-		if(i + 1 < wd_split->size) push_back_str(res, '/');
-
-	}
-
+	struct string * res = bind_str(wd_split, '/');
+	
 	free(wd_split);
 
 	return res;

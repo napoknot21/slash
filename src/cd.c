@@ -8,10 +8,22 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
+
+ssize_t physical_path(char * dst, size_t size, const char * path)
+{
+	memset(dst, 0x0, size);
+	return readlink(path, dst, size);
+}
 
 int builtin_cd(int in, int out, int argc, char **argv)
 {
-	char *path = getenv("HOME"), *pwd = getenv("PWD");
+	const char *path = getenv("HOME"), *pwd = getenv("PWD");
+	
+	if(!lastwd) lastwd = path;
+
+	char ppwd[PHYSICAL_PATH_BUFFER];
+	ssize_t rds = physical_path(ppwd, PHYSICAL_PATH_BUFFER, pwd);
 
 	int kind = LOGICAL_PATH;
 
@@ -37,6 +49,13 @@ int builtin_cd(int in, int out, int argc, char **argv)
 		}
 	}
 
+	if(!strcmp(path, "-")) {
+
+		setenv("PWD", lastwd, 1);
+		return STATUS_CD_SUCCESS;
+
+	}
+
 	struct string *path_str = make_string(path),
 		      *pwd_str = make_string(pwd);
 
@@ -47,8 +66,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	 * or is a symlink
 	 */
 
-
-	const char *dir_cstr = c_str(dir);
+	char *dir_cstr = c_str(dir);
 
 	struct stat dirstat;
 	int stat_s = lstat(dir_cstr, &dirstat);
@@ -57,10 +75,35 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	 * Failed to retrieve informations on the node
 	 */
 
-	if (stat_s == -1) {
+	if (stat_s == -1 && rds > 0) {
+	
+		free_string(dir);	
+		free(dir_cstr);
 
+		struct string * ppwd_str = make_string(ppwd);
+		struct vector * spl_pwd = split_str(pwd_str, '/');
+		
+		pop_back(spl_pwd);
+		push_back(spl_pwd, ppwd_str);	
+
+		struct string * rpwd_str = bind_str(spl_pwd, '/');	
+	
+		free_string(ppwd_str);
+
+		dir = normalize_path(path_str, rpwd_str);
+
+		dir_cstr = c_str(dir);
+		stat_s = lstat(dir_cstr, &dirstat);
+
+		free(spl_pwd);
+
+	}
+
+	if(stat_s == -1) {
+	
 		write(out, "cd: That directory does not exist!\n", 36);
 		return STATUS_CD_ERROR;
+	
 	}
 
 	mode_t dirmode = dirstat.st_mode;
@@ -85,9 +128,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 		 */
 
 		char buff[PHYSICAL_PATH_BUFFER];
-		memset(buff, 0x0, PHYSICAL_PATH_BUFFER);
-
-		ssize_t rds = readlink(dir_cstr, buff, PHYSICAL_PATH_BUFFER);
+		rds = physical_path(buff, PHYSICAL_PATH_BUFFER, dir_cstr);
 
 		if (rds < 0) {
 
@@ -104,10 +145,9 @@ int builtin_cd(int in, int out, int argc, char **argv)
 		append(phys_dir_str, pwd_str);
 		append_cstr(phys_dir_str, buff);
 
-		phys_dir_cstr = c_str(phys_dir_str);
+		phys_dir_cstr = c_str(phys_dir_str);	
 
-		free_string(phys_dir_str);
-		free(phys_dir_str);
+		free_string(phys_dir_str);	
 	}
 
 	free_string(path_str);
@@ -115,7 +155,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 
 	free_string(dir);
 
-	setenv("PWD", phys_dir_cstr, 1);
+	setenv("PWD", phys_dir_cstr, 1);	
 
 	return STATUS_CD_SUCCESS;
 }

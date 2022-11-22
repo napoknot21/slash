@@ -28,6 +28,7 @@ void append_cstr(struct string *, const char *);
 
 void clear_str(struct string *);
 struct vector * split_str(struct string *, char);
+struct string * bind_str(struct vector *, char);
 
 /*
  * Access function

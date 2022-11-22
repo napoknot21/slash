@@ -173,3 +173,18 @@ struct vector * split_str(struct string *str, char sep)
 
 	return svec;
 }
+
+struct string * bind_str(struct vector *vec, char sep)
+{
+	char base[] = {sep};
+
+	struct string * res = make_string(base);
+	for(size_t i = 0; i < vec->size; i++) {
+
+		append(res, at(vec, i));
+		if(i + 1 < vec->size) push_back_str(res, sep);
+	
+	}
+
+	return res;
+}
