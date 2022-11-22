@@ -50,8 +50,9 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	}
 
 	if(!strcmp(path, "-")) {
-
+	
 		setenv("PWD", lastwd, 1);
+		lastwd = pwd;
 		return STATUS_CD_SUCCESS;
 
 	}
