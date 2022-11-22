@@ -22,13 +22,15 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 		case 1 :
 			write (std, path, strlen(path));
+			write(std,"\n",1);
 			return STATUS_PWD_SUCCESS;
 
 		case 2 :
 			if (strcmp(argv[1], "-L")) {
 				write(std, path, strlen(path));
+				write(std,"\n",1);
 				return STATUS_PWD_SUCCESS;
-			
+
 			} else if (strcmp(argv[1], "-P")) {
 				//kind = PHYSICAL_PATH;
 
@@ -41,25 +43,27 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 		default :
 			write (err, "pwd: Expected 0 or 1 argument!\n", 32);
 			return STATUS_PWD_ERROR;
-			
-	}		
+
+	}
 
 	/**
 	 * Symlinks case
 	 */
-	
+
 	char buff[PHYSICAL_PATH_BUFFER];
 
 	//struct string *path_str = make_string(path);
-	
+
 	char *sympath = realpath(path, buff);
 
 	if (sympath == NULL) {
 		write (err, "Internal problem with the symbolic path...\n", 44);
+
 		return STATUS_PWD_ERROR;
 	}
 
 	write (std, sympath, strlen(sympath));
+	write(std,"\n",1);
 
 	return STATUS_PWD_SUCCESS;
 }

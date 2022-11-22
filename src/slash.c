@@ -25,7 +25,7 @@ static int is_exit_call(struct token *tok);
 static char *compute_prompt()
 {
 	int color_len = strlen(C_RED) + 1;
-	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * color_len + 1));
+	char *p = malloc(sizeof(*p) * ((PROMPT_SIZE) + 4 * (color_len + 1)));
 	if (p == NULL) {
 		slasherrno = 1;
 		return NULL;
@@ -37,8 +37,8 @@ static char *compute_prompt()
 	size_t pwdlen = strlen(pwd);
 	size_t errlen = strlen(err);
 	char *format = "[%s%s%s]%s%s%s%s$ ";
-	if (pwdlen + 7 + errlen > PROMPT_SIZE) {
-		char *tmp = pwd + pwdlen - PROMPT_SIZE + 7;
+	if (pwdlen + 8 + errlen > PROMPT_SIZE) {
+		char *tmp = pwd + pwdlen - PROMPT_SIZE + 8;
 		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", tmp,
 			C_CLEAR);
 	} else {
