@@ -29,7 +29,9 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 		
 		case 1 :
 			append(path, retLine);
-			write (std, c_str(path), strlen(c_str(path)));
+			char *message = c_str(path);
+			write (std, message, strlen(message));
+			free(message);
 			free_string(retLine);
 			free_string(path);
 			return STATUS_PWD_SUCCESS;
@@ -37,7 +39,9 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 		case 2 :
 			if (!strcmp(argv[1], "-L")) {
 				append(path, retLine);
-				write(std, c_str(path), strlen(c_str(path)));
+				char *message = c_str(path);
+				write(std, message, strlen(message));
+				free(message);
 				free_string(retLine);
 				free_string(path);
 				return STATUS_PWD_SUCCESS;
@@ -79,8 +83,11 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	
 	append (pathsym, retLine);
 
-	write (std, c_str(pathsym), strlen(c_str(pathsym)));
+	char *message = c_str(pathsym);
 
+	write (std, message, strlen(message));
+
+	free(message);
 	free_string(retLine);
 	free_string(path);
 	free_string(pathsym);
