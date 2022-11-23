@@ -25,45 +25,41 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 		return STATUS_PWD_ERROR;
 	}
 
-	switch (argc) {
-		
-		case 1 :
-			append(path, retLine);
-			char *message = c_str(path);
-			write (std, message, strlen(message));
-			free(message);
-			free_string(retLine);
-			free_string(path);
-			return STATUS_PWD_SUCCESS;
+	int kind = LOGICAL_PATH;
 
-		case 2 :
-			if (!strcmp(argv[1], "-L")) {
-				append(path, retLine);
-				char *message = c_str(path);
-				write(std, message, strlen(message));
-				free(message);
-				free_string(retLine);
-				free_string(path);
-				return STATUS_PWD_SUCCESS;
-			
-			} else if (!strcmp(argv[1], "-P")) {
-				//kind = PHYSICAL_PATH;
+	for (int i = 1; i < argc; i++) {
 
-			} else {
-				write(err, "pwd: Not valid option!\n", 23);
-				free_string(retLine);
-				free_string(path);
-				return STATUS_PWD_ERROR;
-			}
-			break;
+		if (!strcmp(argv[i], "-L")) {
+			continue;
 
-		default :
-			write (err, "pwd: Expected 0 or 1 argument!\n", 31);
+		} else if (!strcmp(argv[i], "-P")) {
+			kind = PHYSICAL_PATH;
+
+		} else {
+			write (err, "pwd: Not a valid option!\n", 25);
 			free_string(retLine);
 			free_string(path);
 			return STATUS_PWD_ERROR;
-			
-	}		
+		}
+
+	}
+
+
+	if (kind == LOGICAL_PATH) {
+		append(path, retLine);
+
+		char *message = c_str(path);
+
+		write (std, message, strlen(message));
+
+		free(message);
+		free_string(retLine);
+		free_string(path);
+
+		return STATUS_PWD_SUCCESS;
+
+	}
+
 
 	/**
 	 * Symlinks case
@@ -74,8 +70,12 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	char *sympath = realpath(c_str(path), buff);
 
 	if (sympath == NULL) {
+		
 		write (err, "pwd: Internal issue with the symbolic path...\n", 47);
+		
 		free_string(path);
+		free_string(retLine);
+
 		return STATUS_PWD_ERROR;
 	}
 
