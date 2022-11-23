@@ -48,7 +48,10 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	for(size_t i = 0; i < path_split->size; i++) {
 
 		struct string * pith = at(path_split, i);
-		if(!cmp_str(pith, curr_str)) continue;
+		if(!cmp_str(pith, curr_str)) {
+			u_free_string(pith);
+			continue;
+		}
 
 		if(!cmp_str(pith, back_up_str)) {
 

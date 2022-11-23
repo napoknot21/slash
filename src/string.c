@@ -165,6 +165,7 @@ struct vector * split_str(struct string *str, char sep)
 
 			struct string * sub = substr(str, beg, k);
 			if(empty_str(sub)) push_back(svec, sub);
+			free(sub);
 
 			beg = k + 1;
 		}
