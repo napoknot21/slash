@@ -59,7 +59,32 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	}
 
 	struct string *path_str = make_string(path),
-		      *pwd_str = make_string(pwd);
+		      *pwd_str = make_string(pwd),
+		      *ppwd_str = make_string(ppwd),
+		      *rpwd_str;
+
+	size_t ppwd_str_s = size_str(ppwd_str);
+
+	if(ppwd_str_s > 0) {
+
+		struct vector * spl_pwd = split_str(pwd_str, '/');
+		
+	//	pop_back(spl_pwd);
+		push_back(spl_pwd, ppwd_str);	
+
+		rpwd_str = bind_str(spl_pwd, '/');	
+	
+		free_string(ppwd_str);
+	
+		if(kind == PHYSICAL_PATH) {
+			
+			free_string(pwd_str);
+			pwd_str = rpwd_str;
+
+		}
+
+		free(spl_pwd);	
+	}
 
 	struct string *dir = normalize_path(path_str, pwd_str);
 
@@ -77,27 +102,15 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	 * Failed to retrieve informations on the node
 	 */
 
-	if (stat_s == -1 && rds > 0) {
-
-		free_string(dir);
-		free(dir_cstr);
-
-		struct string * ppwd_str = make_string(ppwd);
-		struct vector * spl_pwd = split_str(pwd_str, '/');
-
-		pop_back(spl_pwd);
-		push_back(spl_pwd, ppwd_str);
-
-		struct string * rpwd_str = bind_str(spl_pwd, '/');
-
-		free_string(ppwd_str);
+	if(stat_s == -1 && rds > 0 && ppwd_str_s > 0) {
+	
+		free_string(dir);	
+		free(dir_cstr);	
 
 		dir = normalize_path(path_str, rpwd_str);
 
 		dir_cstr = c_str(dir);
 		stat_s = lstat(dir_cstr, &dirstat);
-
-		free(spl_pwd);
 
 	}
 
@@ -130,7 +143,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 		 */
 
 		char buff[PHYSICAL_PATH_BUFFER];
-		rds = physical_path(buff, PHYSICAL_PATH_BUFFER, dir_cstr);
+		rds = physical_path(buff, PHYSICAL_PATH_BUFFER, dir_cstr);	
 
 		if (rds < 0) {
 

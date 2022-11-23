@@ -169,7 +169,7 @@ struct vector * split_str(struct string *str, char sep)
 			beg = k + 1;
 		}
 
-	}
+	}	
 
 	return svec;
 }
