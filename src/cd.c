@@ -67,12 +67,9 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if(ppwd_str_s > 0) {
 
 		struct vector * spl_pwd = split_str(pwd_str, '/');
-		
-	//	pop_back(spl_pwd);
+			
 		push_back(spl_pwd, ppwd_str);	
-
 		rpwd_str = bind_str(spl_pwd, '/');	
-	
 		free_string(ppwd_str);
 	
 		if(kind == PHYSICAL_PATH) {
@@ -103,8 +100,8 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 	if(stat_s == -1 && rds > 0 && ppwd_str_s > 0) {
 	
-		free_string(dir);	
 		free(dir_cstr);	
+		free_string(dir);		
 	
 		free_string(pwd_str);
 		pwd_str = rpwd_str;	
@@ -117,7 +114,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if(stat_s == -1) {
 
 		write(out, "cd: That directory does not exist!\n", 36);
-		return STATUS_CD_ERROR;
+		goto error;		
 
 	}
 
@@ -132,10 +129,11 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if (!S_ISDIR(dirmode) && !symlink) {
 
 		write(out, "cd: Not a directory!\n", 22);
-		return STATUS_CD_ERROR;
+		goto error;
+
 	}	
 
-	const char *phys_dir_cstr = dir_cstr;
+	char *phys_dir_cstr = dir_cstr;
 	if (symlink && kind == PHYSICAL_PATH) {
 
 		/*
@@ -151,8 +149,8 @@ int builtin_cd(int out, int err, int argc, char **argv)
 			 * Broken symlink
 			 */
 
-			write(out, "cd: The symbolic link is broken!\n", 34);
-			return STATUS_CD_ERROR;
+			write(out, "cd: The symbolic link is broken!\n", 34);	
+			goto error;	
 		}
 
 		struct string *phys_dir_str = make_string(NULL);
@@ -160,6 +158,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		append(phys_dir_str, pwd_str);
 		append_cstr(phys_dir_str, buff);
 
+		free(dir_cstr);
 		phys_dir_cstr = c_str(phys_dir_str);
 
 		free_string(phys_dir_str);
@@ -170,7 +169,17 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 	lastwd = pwd;
 	setenv("PWD", phys_dir_cstr, 1);
-	free(dir_cstr);
+
+	free(phys_dir_cstr);	
 
 	return STATUS_CD_SUCCESS;
+
+	error:
+		free_string(path_str);
+		free(dir_cstr);
+		free_string(pwd_str);
+		free_string(ppwd_str);
+
+		return STATUS_CD_ERROR;
+	
 }

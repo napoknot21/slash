@@ -25,7 +25,8 @@ struct string *make_string(const char *ch)
 
 void free_string(struct string *str)
 {
-	if(!str->cnt) return;
+	if(!str || !str->cnt) return;
+
 	free_vector(str->cnt);
 	free(str);
 }
@@ -165,6 +166,7 @@ struct vector * split_str(struct string *str, char sep)
 
 			struct string * sub = substr(str, beg, k);
 			if(empty_str(sub)) push_back(svec, sub);
+			
 			free(sub);
 
 			beg = k + 1;
@@ -176,10 +178,10 @@ struct vector * split_str(struct string *str, char sep)
 }
 
 struct string * bind_str(struct vector *vec, char sep)
-{
-	char base[] = {sep};
-
-	struct string * res = make_string(base);
+{	
+	struct string * res = make_string(NULL);
+	push_back_str(res, '/');
+	
 	for(size_t i = 0; i < vec->size; i++) {
 
 		append(res, at(vec, i));

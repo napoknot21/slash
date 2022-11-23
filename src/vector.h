@@ -26,7 +26,7 @@ void free_vector(struct vector *);
  */
 
 int push_back(struct vector *, void *);
-void *pop_back(struct vector *);
+void pop_back(struct vector *);
 
 void reserve(struct vector *, size_t);
 void clear(struct vector *);

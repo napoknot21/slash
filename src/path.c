@@ -7,9 +7,11 @@ const char * lastwd = NULL;
 struct string * normalize_path(struct string * path, struct string * wd)
 {
 	if(!empty_str(path)) {
+		
 		char *tmp = c_str(wd);
 		struct string *ret = make_string(tmp);
 		free(tmp);
+
 		return ret;
 	}
 
@@ -20,9 +22,11 @@ struct string * normalize_path(struct string * path, struct string * wd)
 		/*
 		 * This is an absolute path
 		 */
+
 		char *tmp = c_str(path);
 		struct string *ret =  make_string(tmp);
 		free(tmp);
+		
 		return ret;
 
 	}
@@ -55,18 +59,15 @@ struct string * normalize_path(struct string * path, struct string * wd)
 
 		if(!cmp_str(pith, back_up_str)) {
 
-			free_string(pop_back(wd_split));
+			pop_back(wd_split);	
 			u_free_string(pith);
 
 		} else {
 
 			push_back(wd_split, pith);
 
-		}
-
-	}
-
-	free(path_split);
+		}	
+	}		
 
 	free_string(back_up_str);
 	free_string(curr_str);
@@ -76,7 +77,9 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	 */
 
 	struct string * res = bind_str(wd_split, '/');
+	
+	free(wd_split);
+	free(path_split);
 
-	free_vector(wd_split);
 	return res;
 }

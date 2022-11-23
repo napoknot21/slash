@@ -52,20 +52,15 @@ int push_back(struct vector *vec, void *data)
 	return 0;
 }
 
-void *pop_back(struct vector *vec)
+void pop_back(struct vector *vec)
 {
-	void *elem = NULL;
-
 	if (vec->size > 0) {
 		void *e = (void *)((char *)(vec->data) +
 				   --vec->size * vec->elem_s);
-		elem = malloc(vec->elem_s);
-
-		memmove(elem, e, vec->elem_s);
+	
+		if(vec->free) vec->free(e);	
 		memset(e, 0x0, vec->elem_s);
 	}
-
-	return elem;
 }
 
 void *at(struct vector *vec, size_t i)
@@ -84,6 +79,7 @@ void reserve(struct vector *vec, size_t ncap)
 
 	vec->capacity = ncap;
 	void *tmp = realloc(vec->data, vec->elem_s * vec->capacity);
+
 	if (tmp == NULL) {
 		free_data(vec->data);
 		free(vec->data);
@@ -96,7 +92,7 @@ void reserve(struct vector *vec, size_t ncap)
 void clear(struct vector *vec)
 {
 	free_data(vec);
-	memset(vec->data, 0x0, vec->elem_s * vec->size);
+	memset(vec->data, 0x0, vec->elem_s * vec->capacity);
 
 	vec->size = 0;
 }
