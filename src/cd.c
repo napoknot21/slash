@@ -16,9 +16,8 @@ ssize_t physical_path(char * dst, size_t size, const char * path)
 	return readlink(path, dst, size);
 }
 
-int builtin_cd(int in, int out, int argc, char **argv)
-{
-	in = -1; //unused
+int builtin_cd(int out, int err, int argc, char **argv)
+{	
 	const char *path = getenv("HOME"), *pwd = getenv("PWD");
 
 	if(!lastwd) lastwd = path;
@@ -168,8 +167,6 @@ int builtin_cd(int in, int out, int argc, char **argv)
 
 	free_string(path_str);
 	free_string(pwd_str);
-
-//	free_string(dir);
 
 	lastwd = pwd;
 	setenv("PWD", phys_dir_cstr, 1);
