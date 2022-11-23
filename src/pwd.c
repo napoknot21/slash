@@ -26,12 +26,12 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 			return STATUS_PWD_SUCCESS;
 
 		case 2 :
-			if (strcmp(argv[1], "-L")) {
+			if (!strcmp(argv[1], "-L")) {
 				write(std, path, strlen(path));
 				write(std,"\n",1);
 				return STATUS_PWD_SUCCESS;
 
-			} else if (strcmp(argv[1], "-P")) {
+			} else if (!strcmp(argv[1], "-P")) {
 				//kind = PHYSICAL_PATH;
 
 			} else {
