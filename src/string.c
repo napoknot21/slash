@@ -161,7 +161,7 @@ struct vector * split_str(struct string *str, char sep)
 
 		char curr = *at_str(str, k);
 
-		if(curr == sep) {
+		if(curr == sep || k + 1 == str_s) {
 
 			struct string * sub = substr(str, beg, k);
 			if(empty_str(sub)) push_back(svec, sub);

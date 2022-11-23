@@ -61,7 +61,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	struct string *path_str = make_string(path),
 		      *pwd_str = make_string(pwd),
 		      *ppwd_str = make_string(ppwd),
-		      *rpwd_str;
+		      *rpwd_str = NULL;
 
 	size_t ppwd_str_s = size_str(ppwd_str);
 
@@ -93,7 +93,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	 * or is a symlink
 	 */
 
-	char *dir_cstr = c_str(dir);
+	char *dir_cstr = c_str(dir);	
 
 	struct stat dirstat;
 	int stat_s = lstat(dir_cstr, &dirstat);
@@ -106,12 +106,13 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	
 		free_string(dir);	
 		free(dir_cstr);	
+	
+		free_string(pwd_str);
+		pwd_str = rpwd_str;	
 
-		dir = normalize_path(path_str, rpwd_str);
+		dir_cstr = c_str(pwd_str);	
 
-		dir_cstr = c_str(dir);
 		stat_s = lstat(dir_cstr, &dirstat);
-
 	}
 
 	if(stat_s == -1) {
@@ -133,7 +134,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 
 		write(out, "cd: Not a directory!\n", 22);
 		return STATUS_CD_ERROR;
-	}
+	}	
 
 	const char *phys_dir_cstr = dir_cstr;
 	if (symlink && kind == PHYSICAL_PATH) {
@@ -168,7 +169,7 @@ int builtin_cd(int in, int out, int argc, char **argv)
 	free_string(path_str);
 	free_string(pwd_str);
 
-	free_string(dir);
+//	free_string(dir);
 
 	lastwd = pwd;
 	setenv("PWD", phys_dir_cstr, 1);
