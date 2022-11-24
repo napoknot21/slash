@@ -88,8 +88,10 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		//free_vector(spl_pwd); //MEMLEAK
 	}
 
-	if (ppwd_str != NULL)
+	if (ppwd_str != NULL) {
 		free_string(ppwd_str);
+		ppwd_str = NULL;
+	}
 
 	struct string *dir = normalize_path(path_str, pwd_str); //memleak
 
