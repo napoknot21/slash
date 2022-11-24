@@ -13,6 +13,8 @@
 #include "slasherrno.h"
 
 #define RET_LINE "\n"
+#define HELP_MESSAGE "pwd: utilisation :pwd [-LP]\n"
+
 
 int builtin_pwd (int std, int err, int argc, char **argv)
 {
@@ -22,6 +24,7 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 	if (path == NULL) {
 		write(err, "pwd: Internal issue with PWD variable env\n",43);
+		free_string(retLine);
 		return STATUS_PWD_ERROR;
 	}
 
@@ -36,19 +39,62 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 			kind = PHYSICAL_PATH;
 
 		} else {
-			write (err, "pwd: Not a valid option!\n", 25);
+			
+			struct string *errMessage = make_string("pwd: Invalid option: ");
+			struct string *errArg = make_string(argv[i]);
+			struct string *errHelp = make_string(HELP_MESSAGE);
+
+			append(errArg, retLine);
+			append(errMessage, errArg);
+			append(errMessage, errHelp);
+
+			char *message = c_str(errMessage);
+
+			if (message == NULL) {
+
+				write (err, "pwd: Internal issue with the error out\n",39);
+				free_string(errMessage);
+				free_string(errHelp);
+				free_string(errArg);
+				free_string(retLine);
+				free_string(path);
+
+				return STATUS_PWD_ERROR;
+			}
+
+			write (err, message, strlen(message));
+			
+			free(message);
+			free_string(errMessage);
+			free_string(errHelp);
+			free_string(errArg);
 			free_string(retLine);
 			free_string(path);
+			
 			return STATUS_PWD_ERROR;
 		}
 
 	}
 
+	/**
+	 * Default case and logical path (-L option)
+	 */
 
 	if (kind == LOGICAL_PATH) {
+
 		append(path, retLine);
 
 		char *message = c_str(path);
+
+		if (message == NULL) {
+			
+			write(err, "pwd: Internal issue with the stdout\n", 36);
+
+			free_string(path);
+			free_string(retLine);
+			
+			return STATUS_PWD_ERROR;
+		}
 
 		write (std, message, strlen(message));
 
@@ -62,7 +108,7 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 
 	/**
-	 * Symlinks case
+	 * Symlinks case (physical path) option -P
 	 */
 	
 	char buff[PHYSICAL_PATH_BUFFER];
@@ -80,10 +126,31 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	}
 
 	struct string *pathsym = make_string(sympath);
+
+	if (pathsym == NULL) {
+		write (err, "pwd: Internal issue getting the symlink\n",40);
+		
+		free_string(path);
+		free_string(retLine);
+
+		return STATUS_PWD_ERROR;
+
+	}
 	
 	append (pathsym, retLine);
 
 	char *message = c_str(pathsym);
+
+	if (message == NULL) {
+
+		write(err,"pwd: Internal issue with symlink path\n",38);
+
+		free_string(path);
+		free_string(retLine);
+		free_string(pathsym);
+
+		return STATUS_PWD_ERROR;
+	}
 
 	write (std, message, strlen(message));
 
@@ -93,4 +160,5 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	free_string(pathsym);
 
 	return STATUS_PWD_SUCCESS;
+
 }
