@@ -166,22 +166,22 @@ struct vector * split_str(struct string *str, char sep)
 
 			struct string * sub = substr(str, beg, k);
 			if(empty_str(sub)) push_back(svec, sub);
-			
+
 			free(sub);
 
 			beg = k + 1;
 		}
 
-	}	
+	}
 
 	return svec;
 }
 
 struct string * bind_str(struct vector *vec, char sep)
-{	
+{
 	struct string * res = make_string(NULL);
 	push_back_str(res, '/');
-	
+
 	for(size_t i = 0; i < vec->size; i++) {
 
 		append(res, at(vec, i));

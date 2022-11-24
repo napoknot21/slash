@@ -2,12 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-const char * lastwd = NULL;
+//const char * lastwd = NULL;
 
 struct string * normalize_path(struct string * path, struct string * wd)
 {
 	if(!empty_str(path)) {
-		
+
 		char *tmp = c_str(wd);
 		struct string *ret = make_string(tmp);
 		free(tmp);
@@ -26,7 +26,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 		char *tmp = c_str(path);
 		struct string *ret =  make_string(tmp);
 		free(tmp);
-		
+
 		return ret;
 
 	}
@@ -59,15 +59,15 @@ struct string * normalize_path(struct string * path, struct string * wd)
 
 		if(!cmp_str(pith, back_up_str)) {
 
-			pop_back(wd_split);	
+			pop_back(wd_split);
 			u_free_string(pith);
 
 		} else {
 
 			push_back(wd_split, pith);
 
-		}	
-	}		
+		}
+	}
 
 	free_string(back_up_str);
 	free_string(curr_str);
@@ -77,8 +77,9 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	 */
 
 	struct string * res = bind_str(wd_split, '/');
-	
-	free(wd_split);
+
+	free_vector(wd_split);
+	free(path_split->data);
 	free(path_split);
 
 	return res;

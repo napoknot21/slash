@@ -17,10 +17,10 @@ ssize_t physical_path(char * dst, size_t size, const char * path)
 }
 
 int builtin_cd(int out, int err, int argc, char **argv)
-{	
+{
 	const char *path = getenv("HOME"), *pwd = getenv("PWD");
 
-	if(!lastwd) lastwd = path;
+	//if(!lastwd) lastwd = path;
 
 	char ppwd[PHYSICAL_PATH_BUFFER];
 	ssize_t rds = physical_path(ppwd, PHYSICAL_PATH_BUFFER, pwd);
@@ -50,16 +50,20 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	}
 
 	if(!strcmp(path, "-")) {
-
-		setenv("PWD", lastwd, 1);
-		lastwd = pwd;
+		char *oldpwd = getenv("OLDPWD");
+		if (oldpwd == NULL) {
+			write(err, "cd: OLDPWD not set\n", 21);
+			return STATUS_CD_ERROR;
+		}
+		setenv("PWD", oldpwd, 1);
+		setenv("OLDPWD", pwd, 1);
 		return STATUS_CD_SUCCESS;
 
 	}
 
 	struct string *path_str = make_string(path),
-		      *pwd_str = make_string(pwd),
-		      *ppwd_str = make_string(ppwd),
+		      *pwd_str = make_string(pwd),   //memleak
+		      *ppwd_str = make_string(ppwd), //indirect loss
 		      *rpwd_str = NULL;
 
 	size_t ppwd_str_s = size_str(ppwd_str);
@@ -67,29 +71,31 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if(ppwd_str_s > 0) {
 
 		struct vector * spl_pwd = split_str(pwd_str, '/');
-			
-		push_back(spl_pwd, ppwd_str);	
-		rpwd_str = bind_str(spl_pwd, '/');	
+
+		push_back(spl_pwd, ppwd_str);
+		rpwd_str = bind_str(spl_pwd, '/');
 		free_string(ppwd_str);
-	
+
 		if(kind == PHYSICAL_PATH) {
-			
+
 			free_string(pwd_str);
 			pwd_str = rpwd_str;
 
 		}
-
-		free(spl_pwd);	
+		free(spl_pwd->data);
+		free(spl_pwd);
+		//free_vector(spl_pwd); //MEMLEAK
 	}
 
-	struct string *dir = normalize_path(path_str, pwd_str);
+	struct string *dir = normalize_path(path_str, pwd_str); //memleak
 
 	/*
 	 * We check whether that directory exists,
 	 * or is a symlink
 	 */
 
-	char *dir_cstr = c_str(dir);	
+	char *dir_cstr = c_str(dir);
+	free_string(dir);
 
 	struct stat dirstat;
 	int stat_s = lstat(dir_cstr, &dirstat);
@@ -99,14 +105,14 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	 */
 
 	if(stat_s == -1 && rds > 0 && ppwd_str_s > 0) {
-	
-		free(dir_cstr);	
-		free_string(dir);		
-	
-		free_string(pwd_str);
-		pwd_str = rpwd_str;	
 
-		dir_cstr = c_str(pwd_str);	
+		free(dir_cstr);
+
+		free_string(pwd_str);
+		pwd_str = rpwd_str;
+		rpwd_str = NULL;
+
+		dir_cstr = c_str(pwd_str);
 
 		stat_s = lstat(dir_cstr, &dirstat);
 	}
@@ -114,7 +120,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if(stat_s == -1) {
 
 		write(out, "cd: That directory does not exist!\n", 36);
-		goto error;		
+		goto error;
 
 	}
 
@@ -131,7 +137,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		write(out, "cd: Not a directory!\n", 22);
 		goto error;
 
-	}	
+	}
 
 	char *phys_dir_cstr = dir_cstr;
 	if (symlink && kind == PHYSICAL_PATH) {
@@ -141,7 +147,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		 */
 
 		char buff[PHYSICAL_PATH_BUFFER];
-		rds = physical_path(buff, PHYSICAL_PATH_BUFFER, dir_cstr);	
+		rds = physical_path(buff, PHYSICAL_PATH_BUFFER, dir_cstr);
 
 		if (rds < 0) {
 
@@ -149,8 +155,8 @@ int builtin_cd(int out, int err, int argc, char **argv)
 			 * Broken symlink
 			 */
 
-			write(out, "cd: The symbolic link is broken!\n", 34);	
-			goto error;	
+			write(out, "cd: The symbolic link is broken!\n", 34);
+			goto error;
 		}
 
 		struct string *phys_dir_str = make_string(NULL);
@@ -162,15 +168,17 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		phys_dir_cstr = c_str(phys_dir_str);
 
 		free_string(phys_dir_str);
+		if (rpwd_str != NULL)
+			free_string(rpwd_str);
 	}
 
 	free_string(path_str);
 	free_string(pwd_str);
 
-	lastwd = pwd;
+	setenv("OLDPWD",pwd,1);
 	setenv("PWD", phys_dir_cstr, 1);
 
-	free(phys_dir_cstr);	
+	free(phys_dir_cstr);
 
 	return STATUS_CD_SUCCESS;
 
@@ -179,7 +187,9 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		free(dir_cstr);
 		free_string(pwd_str);
 		free_string(ppwd_str);
+		if (rpwd_str != NULL)
+			free_string(rpwd_str);
 
 		return STATUS_CD_ERROR;
-	
+
 }
