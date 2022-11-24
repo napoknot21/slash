@@ -62,7 +62,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	}
 
 	struct string *path_str = make_string(path),
-		      *pwd_str = make_string(pwd),   //memleak
+		      *pwd_str = make_string(pwd),
 		      *ppwd_str = make_string(ppwd), //indirect loss
 		      *rpwd_str = NULL;
 
@@ -74,18 +74,22 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 		push_back(spl_pwd, ppwd_str);
 		rpwd_str = bind_str(spl_pwd, '/');
-		free_string(ppwd_str);
+		free(ppwd_str);
+		ppwd_str = NULL;
 
 		if(kind == PHYSICAL_PATH) {
 
 			free_string(pwd_str);
 			pwd_str = rpwd_str;
+			rpwd_str = NULL;
 
 		}
-		free(spl_pwd->data);
-		free(spl_pwd);
+		free_vector(spl_pwd);
 		//free_vector(spl_pwd); //MEMLEAK
 	}
+
+	if (ppwd_str != NULL)
+		free_string(ppwd_str);
 
 	struct string *dir = normalize_path(path_str, pwd_str); //memleak
 
@@ -108,9 +112,11 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 		free(dir_cstr);
 
-		free_string(pwd_str);
-		pwd_str = rpwd_str;
-		rpwd_str = NULL;
+		if (rpwd_str != NULL) {
+			free_string(pwd_str);
+			pwd_str = rpwd_str;
+			rpwd_str = NULL;
+		}
 
 		dir_cstr = c_str(pwd_str);
 
@@ -168,9 +174,9 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		phys_dir_cstr = c_str(phys_dir_str);
 
 		free_string(phys_dir_str);
-		if (rpwd_str != NULL)
-			free_string(rpwd_str);
 	}
+	if (rpwd_str != NULL)
+			free_string(rpwd_str);
 
 	free_string(path_str);
 	free_string(pwd_str);
@@ -186,7 +192,8 @@ int builtin_cd(int out, int err, int argc, char **argv)
 		free_string(path_str);
 		free(dir_cstr);
 		free_string(pwd_str);
-		free_string(ppwd_str);
+		if (ppwd_str != NULL)
+			free_string(ppwd_str);
 		if (rpwd_str != NULL)
 			free_string(rpwd_str);
 
