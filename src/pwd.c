@@ -113,7 +113,11 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	
 	char buff[PHYSICAL_PATH_BUFFER];
 	
-	char *sympath = realpath(c_str(path), buff);
+	char *tmp = c_str(path);
+	
+	char *sympath = realpath(tmp, buff);
+
+	free(tmp);
 
 	if (sympath == NULL) {
 		
@@ -136,6 +140,8 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 		return STATUS_PWD_ERROR;
 
 	}
+
+	free(sympath);
 	
 	append (pathsym, retLine);
 
