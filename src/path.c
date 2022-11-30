@@ -16,18 +16,21 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	}
 
 	char * fs = front_str(path);
+	int is_absolute = *fs == '/';
 
-	if(*fs == '/') {
+	if(is_absolute) {
 
 		/*
 		 * This is an absolute path
 		 */
-
+/*
 		char *tmp = c_str(path);
 		struct string *ret =  make_string(tmp);
 		free(tmp);
 
 		return ret;
+*/	
+		clear_str(wd);
 
 	}
 
