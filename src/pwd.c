@@ -117,7 +117,7 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	
 	char *sympath = realpath(tmp, buff);
 
-	free(tmp);
+	//free(tmp);
 
 	if (sympath == NULL) {
 		
@@ -141,7 +141,7 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 	}
 
-	free(sympath);
+	//free(sympath);
 	
 	append (pathsym, retLine);
 
@@ -161,7 +161,8 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	write (std, message, strlen(message));
 
 	free(message);
-	free_string(retLine);
+  free(tmp);
+  free_string(retLine);
 	free_string(path);
 	free_string(pathsym);
 
