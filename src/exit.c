@@ -2,7 +2,7 @@
 #include "slasherrno.h"
 #include <stdio.h>
 
-int builtin_exit(int in, int out, int argc, char ** argv)
+int builtin_exit(int out, int err, int argc, char ** argv)
 {
 	if(argc > 2) {
 

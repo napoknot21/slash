@@ -66,7 +66,7 @@ int d_hash(int k, size_t cap)
 	return ((5 * k) + 1) % cap;
 }
 
-void resize(map * m)
+void resize_map(map * m)
 {		
 	map_element * nd = m->data;	
 
@@ -89,18 +89,18 @@ void resize(map * m)
 			continue;
 		}	
 	
-		map_insert(nd[j].keyhash, nd[j].val, m);
+		insert_map(m, nd[j].keyhash, nd[j].val);
 	}
 
 	free(nd);	
 
 }
 
-int map_insert(int key, void * val, map * m)
+int insert_map(map * m, int key, void * val)
 {
 	if(m->size >= (size_t)(m->alpha * m->capacity))
 	{	
-		resize(m);
+		resize_map(m);
 	}
 
 	int ptr = f_hash(key, m->capacity);
@@ -131,12 +131,12 @@ int map_insert(int key, void * val, map * m)
 	return 0;
 }
 
-int map_remove(int key, map * m)
+int remove_map(map * m, int key)
 {
 	int ptr = f_hash(key, m->capacity);
 	map_element * mel = &m->data[ptr];
 
-	int j = 0;
+	size_t j = 0;
 
 	while(mel->keyhash != key)
 	{
@@ -165,7 +165,7 @@ int map_remove(int key, map * m)
 
 void * map_at(int key, map * m)
 {
-	int ptr = f_hash(key, m->capacity), j = 0;	
+	size_t ptr = f_hash(key, m->capacity), j = 0;	
 
 	while(key != m->data[ptr].keyhash)
 	{		

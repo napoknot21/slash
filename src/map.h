@@ -40,7 +40,7 @@ void free_map(map *m);
  * Operation functions
  */
 
-int insert_map(map *, int, void *);
+int insert_map(map*, int, void*);
 int remove_map(map *, int);
 void resize_map(map *);
 

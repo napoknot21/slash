@@ -52,7 +52,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 	if(!strcmp(path, "-")) {
 		char *oldpwd = getenv("OLDPWD");
 		if (oldpwd == NULL) {
-			write(err, "cd: OLDPWD not set\n", 21);
+			dprintf(err, "cd: OLDPWD not set\n");
 			return STATUS_CD_ERROR;
 		}
 		setenv("PWD", oldpwd, 1);
@@ -127,7 +127,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 	if(stat_s == -1) {
 
-		write(out, "cd: That directory does not exist!\n", 36);
+		dprintf(out, "cd: That directory does not exist!\n");
 		goto error;
 
 	}
@@ -142,7 +142,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 	if (!S_ISDIR(dirmode) && !symlink) {
 
-		write(out, "cd: Not a directory!\n", 22);
+		dprintf(out, "cd: Not a directory!\n");
 		goto error;
 
 	}
@@ -163,7 +163,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 			 * Broken symlink
 			 */
 
-			write(out, "cd: The symbolic link is broken!\n", 34);
+			dprintf(out, "cd: The symbolic link is broken!\n");
 			goto error;
 		}
 

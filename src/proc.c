@@ -13,7 +13,7 @@ char ** exec_format(int argc, char ** argv)
 	size_t exs = (argc + 1) * sizeof(char*);
 	char ** ref = malloc(exs);
 
-	for(size_t i = 0; i < argc; i++) {
+	for(int i = 0; i < argc; i++) {
 
 		ref[i] = argv[i];	
 
