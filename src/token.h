@@ -6,11 +6,12 @@
  * Define the token type
  */
 enum token_type {
-	CMD,	  // Command
-	REDIRECT, // Redirection
-	ARG,	  // Argument
-	OPERATOR, // Operator
-	TYPE_NONE // Default type
+	CMD,	   // Command
+	REDIRECT,  // Redirection
+	ARG,	   // Argument
+	OPERATOR,  // Operator
+	TYPE_NONE, // Default type
+	JOKER
 };
 
 /**
@@ -19,13 +20,13 @@ enum token_type {
  */
 enum token_type_spec {
 	/**
-	 * CMD specification
+	 * CMD specifications
 	 */
 	INTERNAL,
 	EXTERNAL,
 
 	/**
-	 * REDIRECT specification
+	 * REDIRECT specifications
 	 */
 	STDIN,
 	STDOUT,
@@ -37,16 +38,31 @@ enum token_type_spec {
 	PIPE,
 
 	/**
-	 * OPERATOR specification
+	 * OPERATOR specifications
 	 */
 	AND,
 	OR,
 	SEMICOLON,
 
 	/**
-	 * ARG specification
+	 * ARG specifications
 	 */
-	SPEC_NONE
+	SPEC_NONE,
+
+	/**
+	 * Joker specifications
+	 */
+	STAR,
+	SOME,
+	DSTAR,
+
+	HYPHEN,
+	LBRACKET,
+	RBRACKET,
+	SLASH,
+	PATH,
+	PATTERN
+
 };
 
 /**
@@ -62,7 +78,7 @@ struct token {
 /**
  * Initialize a new token according to the data, type and type_spec.
  *
- * @param *data The token's value
+ * @param data The token's value
  * @param type The token's type
  * @param type_spec The token's type specification
  */

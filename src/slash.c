@@ -33,7 +33,10 @@ static char *compute_prompt()
 	char *color = (slasherrno != 0) ? C_RED : C_GREEN;
 	char *pwd = getenv("PWD");
 	char err[4];
-	sprintf(err, "%d", slasherrno);
+	if (slasherrno == ESIG)
+		memcpy(err,"SIG",4);
+	else
+		sprintf(err, "%d", slasherrno);
 	size_t pwdlen = strlen(pwd);
 	size_t errlen = strlen(err);
 	char *format = "[%s%s%s]%s%s%s%s$ ";
@@ -48,7 +51,8 @@ static char *compute_prompt()
 	return p;
 }
 
-static int is_exit_call(struct token *tok) {
+static int is_exit_call(struct token *tok)
+{
 	char *cmd = c_str(tok->data);
 	int ret = strcmp(EXIT_NAME, cmd) == 0;
 	free(cmd);
@@ -70,7 +74,7 @@ int main()
 			break;
 		}
 		parse(tokens);
-		if (tokens->size != 0 && is_exit_call(at(tokens,0))) {
+		if (tokens->size != 0 && is_exit_call(at(tokens, 0))) {
 			free_vector(tokens);
 			break;
 		}

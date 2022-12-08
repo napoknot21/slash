@@ -1,0 +1,58 @@
+Mini Parser, lexer for joker
+
+Token too (same for the rest in specific enum JOKER_ALL for *, CROCHETO [ CROCHETF ] NOT !
+JOKER_REG (?)
+case [geh] -> SOME geh
+case ?,. -> SOME ALL avec JOPKER_SOME -> 1 lettre
+case - -> TIRET
+case [a-z] -> SOME (EXPENSION -)
+
+Recherche itérative (récursive ?):
+Si itérative besoin d'une queue pour stocker les valeurs en attente d'etre traités
+lecture jusqu'au premier joker -> Expansion du joker
+Entrée A/B/* avec B contenant C/ toto titi tata
+
+	-> C/	
+A -> B  -> toto
+	-> titi
+	-> tata
+
+Entrée A/B/*/ -> ALL DIR in B
+
+	-> C/ -> dir
+A -> B  -> -(toto)
+	-> -(titi)
+	-> -(tata)
+
+Condition path : If dir add / execpt for the final one
+Entree A/B/*/* avec B = C/ D/ tata; C = E/ toto; D = F/ titi
+
+		-> E/	(1)
+	-> C/   -> toto (2)
+
+A -> B	-> D/	-> F/	(3)
+		-> titi	(4)
+
+	-> -(tata)
+
+
+Entree **/*toto avec A = B/ toto; B = C/ D/ tata; C = E/ toto; D = F/ titi
+			E = toto; F = toto
+
+
+		-> E/	-> toto	(1)
+	-> C	-> toto		(2)
+
+A -> B  -> D	->F/ 	-> toto	(3)
+		-> -(titi)
+
+	-> toto			(4)
+
+  -> toto			(5)
+
+Remarques:
+**/ IDENTIFIQANT UNIQUE car pas de remplacement par valeur
+NOM/ => NOM = DIR
+Besoin File priorité iterative => a Chaque / ajouter une priorité pour ajouter avant le fichier du repertoire courant
+Verifier si ça respecte les jokers donnés => reduction du nombre d'itération
+

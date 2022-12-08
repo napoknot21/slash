@@ -58,7 +58,7 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 		slasherrno = EFAIL;
 		return 1;
 	}
-
+	//TODO add expand_joker for commands
 	return push_back(args, tok);
 }
 

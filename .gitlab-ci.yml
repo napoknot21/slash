@@ -51,6 +51,8 @@ test-script :
     paths:
       - build/src/.o*
       - slash
+  only:
+    - master
 
 memcheck-test-slash:
   stage: memcheck
