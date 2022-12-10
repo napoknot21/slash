@@ -1,5 +1,6 @@
 #include "joker.h"
 
+#include "automaton.h"
 #include "slasherrno.h"
 #include "string.h"
 #include "token.h"
@@ -46,7 +47,6 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i);
 static int compute_path(struct joker_token *jt, struct vector *result,
 			enum token_type type, enum token_type_spec type_spec);
-static int check_pattern(char *name, struct joker_token *jt);
 
 //###################################################
 static struct joker_token *make_jt(struct string *value,
@@ -198,7 +198,7 @@ static struct joker_token *add_token(struct string *buf, struct vector *result,
 		if (has_bracket) {
 			subtokens = expand_bracket(subtokens);
 		}
-		return make_jt(buf, subtokens, PATTERN);
+		return make_jt(buf, subtokens, REGEX);
 	}
 }
 
@@ -233,10 +233,12 @@ static struct joker_token *compute_joker_tok(struct token *tok,
 
 	case HYPHEN:
 		has_hyphen = 1;
+		append(buffer, tok->data);
 		break;
 
 	case LBRACKET:
 		has_bracket = 1;
+		append(buffer, tok->data);
 		break;
 	case RBRACKET:
 		has_bracket = 0;
@@ -273,6 +275,7 @@ static struct vector *parse(struct vector *tokens)
 
 static struct vector *expand_bracket(struct vector *subtokens)
 { // TODO
+	//struct token *regex = make_token()
 	return subtokens;
 }
 
@@ -302,11 +305,6 @@ static int compute_path(struct joker_token *jt, struct vector *result,
 	return 0;
 }
 
-static int check_pattern(char *name, struct joker_token *jt)
-{
-	return 1;
-}
-
 static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i)
 {
@@ -330,16 +328,17 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	free(c_path);
 	c_path = NULL;
 	struct vector *entries = make_vector(sizeof(char *), free);
-
+	struct automaton *automaton = make_automaton(jt->subtokens);
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		if (strcmp(entry->d_name, ".") == 0 ||
 		    strcmp(entry->d_name, "..") == 0) {
 			continue;
 		}
-		if (check_pattern(entry->d_name, jt))
+		if (check_regex(automaton, entry->d_name))
 			push_back(entries, entry->d_name);
 	}
+	free_automaton(automaton);
 	closedir(dir);
 	dir = NULL;
 	struct stat st;
@@ -365,6 +364,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		if (S_ISDIR(st.st_mode))
 			compute_pattern(jtokens, result, path, (i + 1));
 		// truncate
+		path->cnt->size -= strlen(name);
 		free(c_path);
 		c_path = NULL;
 		free(name);
@@ -388,7 +388,13 @@ error:
 
 static int interpret(struct vector *jtokens, struct vector *result)
 {
-	return 0;
+	struct string *path = make_string("");
+	if (path == NULL)
+		return -1;
+
+	int ret = compute_pattern(jtokens, result, path, 0);
+	free_string(path);
+	return ret;
 }
 
 struct vector *expand_jokers(struct token *tok)

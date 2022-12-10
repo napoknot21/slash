@@ -88,10 +88,6 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 
 static int compute_args(struct token *tok, struct vector *args)
 {
-	// if has joker
-	// then computejoker(tok,arg)
-	// else
-
 	return push_back(args, tok);
 }
 

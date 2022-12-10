@@ -61,7 +61,7 @@ enum token_type_spec {
 	RBRACKET,
 	SLASH,
 	PATH,
-	PATTERN
+	REGEX
 
 };
 
