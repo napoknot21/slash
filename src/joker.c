@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -32,7 +33,6 @@ static struct joker_token *make_jt(struct string *value,
 				   struct vector *subtokens,
 				   enum token_type_spec type);
 static void u_free_jt(void *jt);
-static void free_jt(struct joker_token *jt);
 static struct vector *lex(struct token *t);
 static struct vector *build_tokens(char *arg);
 static enum token_type_spec compute_token_type(char c);
@@ -45,8 +45,6 @@ static struct joker_token *add_token(struct string *s, struct vector *result,
 static struct vector *expand_bracket(struct vector *subtokens);
 static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i);
-static int compute_path(struct joker_token *jt, struct vector *result,
-			enum token_type type, enum token_type_spec type_spec);
 
 //###################################################
 static struct joker_token *make_jt(struct string *value,
@@ -69,12 +67,6 @@ static void u_free_jt(void *jt)
 	free_string(del->path);
 	if (del->subtokens != NULL)
 		free_vector(del->subtokens);
-}
-
-static void free_jt(struct joker_token *jt)
-{
-	u_free_jt((struct joker_token *)jt);
-	free(jt);
 }
 
 static struct token *make_slash()
@@ -111,7 +103,6 @@ static enum token_type_spec compute_token_type(char c)
 static struct token *compute_tok(char *arg, int start, int end, int spec)
 {
 	end = (start != end) ? end : start + 1;
-	spec = SPEC_NONE;
 	char *buf = malloc(end - start + 1);
 	memcpy(buf, arg + start, end - start);
 	buf[end - start] = '\0';
@@ -130,22 +121,31 @@ static struct vector *build_tokens(char *arg)
 		free(t);
 		return tokens;
 	}
-	int start = 0;
-	int end = 0;
+	size_t start = 0;
+	size_t end = 0;
+	int has_bracket = 0;
+	enum token_type_spec last = INTERNAL;
+
 	for (size_t i = 0; i < len; i++) {
 		enum token_type_spec spec = compute_token_type(arg[i]);
-		if (spec == SPEC_NONE) {
+		if (last == INTERNAL)
+			last = spec;
+		if (spec == LBRACKET)
+			has_bracket = 1;
+		if (spec == RBRACKET)
+			has_bracket = 0;
+		if (spec == SPEC_NONE && !has_bracket) {
 			end++;
 		} else {
-			struct token *t = compute_tok(arg, start, end, spec);
-			end++;
+			struct token *t = compute_tok(arg, start, end, last);
 			start = end;
 			push_back(tokens, t);
 			free(t);
+			last = spec;
 		}
 	}
-	if (end != start) {
-		struct token *t = compute_tok(arg, start, end, SPEC_NONE);
+	if (start < len) {
+		struct token *t = compute_tok(arg, start, end, last);
 		push_back(tokens, t);
 		free(t);
 	}
@@ -167,8 +167,8 @@ static struct vector *lex(struct token *t)
 		struct vector *tmp = build_tokens(s);
 		if (tmp == NULL)
 			goto error_null;
-		push_back(tokens, make_slash());
 		push_back_vec(tokens, tmp);
+		push_back(tokens, make_slash());
 		s = strtok(NULL, delimiters);
 	}
 	free(line);
@@ -186,15 +186,17 @@ static struct joker_token *add_token(struct string *buf, struct vector *result,
 				     struct joker_token *last,
 				     struct vector *subtokens)
 {
-	if (subtokens->size == 1 && last->type == PATH) {
+	if (last != NULL && subtokens->size == 1 && last->type == PATH) {
 		push_back_str(last->path, '/');
 		append(last->path, buf);
 		clear(subtokens);
 		clear_str(buf);
 		return NULL;
 	} else {
-		push_back(result, last);
-		free(last);
+		if (last != NULL) {
+			push_back(result, last);
+			free(last);
+		}
 		if (has_bracket) {
 			subtokens = expand_bracket(subtokens);
 		}
@@ -217,6 +219,15 @@ static struct joker_token *compute_joker_tok(struct token *tok,
 		has_hyphen = 0;
 		if (has_bracket) {
 			tok->type_spec = SPEC_NONE;
+			struct token *some = at(subtokens, subtokens->size - 1);
+			if (has_hyphen) {
+				char *tmp = at_str(some->data,
+						   size_str(some->data) - 1);
+				*tmp = *at_str(tok->data, 0);
+			} else {
+				append(some->data, tok->data);
+				append(some->data, tok->data);
+			}
 			break;
 		}
 		append(buffer, tok->data);
@@ -238,7 +249,10 @@ static struct joker_token *compute_joker_tok(struct token *tok,
 
 	case LBRACKET:
 		has_bracket = 1;
+		struct token *some = make_token("", JOKER, SOME);
 		append(buffer, tok->data);
+		push_back(subtokens, some);
+		free(some);
 		break;
 	case RBRACKET:
 		has_bracket = 0;
@@ -247,6 +261,7 @@ static struct joker_token *compute_joker_tok(struct token *tok,
 	default:
 		error = EUNKNOWN;
 	}
+
 	return NULL;
 }
 
@@ -263,19 +278,24 @@ static struct vector *parse(struct vector *tokens)
 		struct joker_token *tmp =
 			compute_joker_tok(tok, buf, result, last, subtoks);
 		if (tmp != NULL) {
-			free(last);
+			push_back(result, tmp);
+			if (last != NULL)
+				free(last);
 			last = tmp;
 		}
 	}
 	if (last != NULL)
 		free(last);
-	free(buf);
+	if (has_hyphen || has_bracket) {
+		free_vector(result);
+		return NULL;
+	}
 	return result;
 }
 
 static struct vector *expand_bracket(struct vector *subtokens)
 { // TODO
-	//struct token *regex = make_token()
+	// struct token *regex = make_token()
 	return subtokens;
 }
 
@@ -289,25 +309,17 @@ static int has_joker(struct string *s)
 	return 0;
 }
 
-static int compute_path(struct joker_token *jt, struct vector *result,
-			enum token_type type, enum token_type_spec type_spec)
+static void truncate_str(struct string *s, size_t len)
 {
-	char *s = c_str(jt->path);
-	struct stat st;
-	if (stat(s, &st) != -1) {
-		free(s);
-		return -1;
-	}
-	struct token *tmp = make_token(s, type, type_spec);
-	push_back(result, tmp);
-	free(s);
-	free(tmp);
-	return 0;
+	for (size_t i = 0; i < len; i++)
+		pop_back_str(s);
 }
-
 static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i)
 {
+	struct vector *entries = NULL;
+	struct automaton *automaton = NULL;
+	DIR *dir = NULL;
 	if (jtokens->size == i) {
 		return 0;
 	}
@@ -322,29 +334,33 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		}
 	}
 	char *c_path = c_str(path);
-	DIR *dir = NULL;
 	if ((dir = opendir(c_path)) == NULL)
 		goto error;
 	free(c_path);
 	c_path = NULL;
-	struct vector *entries = make_vector(sizeof(char *), free);
-	struct automaton *automaton = make_automaton(jt->subtokens);
+	entries = make_vector(sizeof(struct string),
+			      (void (*)(void *))u_free_string);
+	automaton = make_automaton(jt->subtokens);
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
 		if (strcmp(entry->d_name, ".") == 0 ||
 		    strcmp(entry->d_name, "..") == 0) {
 			continue;
 		}
-		if (check_regex(automaton, entry->d_name))
-			push_back(entries, entry->d_name);
+		if (check_regex(automaton, entry->d_name)) {
+			struct string *s_name = make_string(entry->d_name);
+			push_back(entries, s_name);
+			free(s_name);
+		}
 	}
 	free_automaton(automaton);
+	automaton = NULL;
 	closedir(dir);
 	dir = NULL;
 	struct stat st;
 	size_t j = 0;
 	for (j = 0; j < entries->size; j++) {
-		char *name = at(entries, j);
+		char *name = c_str(at(entries, j));
 		if (size_str(path) + strlen(name) + 2 >= PATH_MAX) {
 			free(name);
 			continue;
@@ -364,7 +380,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		if (S_ISDIR(st.st_mode))
 			compute_pattern(jtokens, result, path, (i + 1));
 		// truncate
-		path->cnt->size -= strlen(name);
+		truncate_str(path, strlen(name) + 1);
 		free(c_path);
 		c_path = NULL;
 		free(name);
@@ -376,37 +392,47 @@ error:
 	if (c_path != NULL)
 		free(c_path);
 	if (entries != NULL) {
-		for (; j < entries->size; j++)
-			free(at(entries, j));
-		free(entries);
+		free_vector(entries);
 	}
 	if (dir != NULL)
 		closedir(dir);
+	if (automaton != NULL)
+		free_automaton(automaton);
 
 	return -1;
 }
 
 static int interpret(struct vector *jtokens, struct vector *result)
 {
-	struct string *path = make_string("");
+	struct string *path = make_string(".");
 	if (path == NULL)
 		return -1;
-
 	int ret = compute_pattern(jtokens, result, path, 0);
-	free_string(path);
+	if (path != NULL)
+		free_string(path);
 	return ret;
 }
 
 struct vector *expand_jokers(struct token *tok)
 {
+	has_bracket = 0;
+	has_hyphen = 0;
 	if (!has_joker(tok->data))
 		return NULL;
 
 	struct vector *l = lex(tok);
+	if (l == NULL)
+		return NULL;
 	struct vector *p = parse(l);
+	if (p == NULL)
+		return NULL;
 	free(l);
 	struct vector *result = make_vector(sizeof(struct token), u_free_token);
 	interpret(p, result);
 	free(p);
+	if (result->size == 0) {
+		free_vector(result);
+		return NULL;
+	}
 	return result;
 }

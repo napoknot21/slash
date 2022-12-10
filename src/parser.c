@@ -5,6 +5,7 @@
 #include "string.h"
 #include "token.h"
 #include "vector.h"
+#include "joker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,7 +89,15 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 
 static int compute_args(struct token *tok, struct vector *args)
 {
-	return push_back(args, tok);
+	struct vector *jokers = expand_jokers(tok);
+	if (jokers == NULL)
+		return push_back(args, tok);
+	for (size_t i = 0; i<jokers->size; i++) {
+		struct token *tok = at(jokers, i);
+		push_back(args, tok);
+	}
+	free(jokers);
+	return 0;
 }
 
 static int exec_internal(struct vector *args, int fdout, int fderr)

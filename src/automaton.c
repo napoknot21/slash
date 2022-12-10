@@ -7,6 +7,8 @@
 
 struct link;
 
+static int n_checked = 0;
+
 struct state {
 	struct vector *links;
 	int end;
@@ -18,6 +20,7 @@ struct link {
 	struct state *out;
 	struct string *keys; //(start, end) with ASCII code for intervals such
 			     // as [a-e];
+	enum token_type_spec type;
 };
 
 struct automaton {
@@ -34,10 +37,12 @@ static struct link *make_link(struct token *tok, struct state *current,
 static struct state *make_state(int end, int start);
 static void u_free_link(void *ln);
 static void u_free_state(void *s);
-static int check_link(struct link *ln, char c);
-static struct state *check_state(struct state *state, char c,
+static int check_link(struct link *ln, char *c);
+static struct state *check_state(struct state *state, char *c,
 				 struct vector *stack, int ind);
 static int not_in(struct vector *links, struct link *ln);
+static int check_some(struct string *keys, char c);
+static int check_none(struct string *keys, char *c);
 
 static void u_free_link(void *ln)
 {
@@ -78,6 +83,7 @@ static struct link *make_link(struct token *tok, struct state *current,
 	append(ln->keys, tok->data);
 	ln->in = current;
 	ln->out = next;
+	ln->type = tok->type_spec;
 	if (ln->out == NULL) {
 		free_string(ln->keys);
 		free(ln);
@@ -95,21 +101,48 @@ static int not_in(struct vector *links, struct link *ln)
 	}
 	return 1;
 }
-
-static int check_link(struct link *ln, char c)
+static int check_some(struct string *keys, char c)
 {
-	if (ln->in == ln->out)
-		return 1;
-	for (size_t i = 0; i < size_str(ln->keys); i += 2) {
-		char start = *at_str(ln->keys, i);
-		char end = *at_str(ln->keys, i + 1);
+	for (size_t i = 0; i < size_str(keys); i += 2) {
+		char start = *at_str(keys, i);
+		char end = *at_str(keys, i + 1);
 		if (start <= c && c <= end)
 			return 1;
 	}
 	return 0;
 }
 
-static struct state *check_state(struct state *state, char c,
+static int check_none(struct string *keys, char *c)
+{
+	size_t len = strlen(c);
+	size_t size = size_str(keys);
+	if (len < size)
+		return 0;
+	char tmp[size + 1];
+	memcpy(tmp, c, size);
+	tmp[size] = '\0';
+	char *key = c_str(keys);
+	int ret = strcmp(key, tmp);
+	free(key);
+	n_checked = size;
+	return ret == 0;
+}
+static int check_link(struct link *ln, char *c)
+{
+	n_checked = 1;
+	switch (ln->type) {
+	case SOME:
+		return check_some(ln->keys, *c);
+	case SPEC_NONE:
+		return check_none(ln->keys, c);
+	case STAR:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static struct state *check_state(struct state *state, char *c,
 				 struct vector *stack, int ind)
 {
 	int cnt = 0;
@@ -117,7 +150,8 @@ static struct state *check_state(struct state *state, char c,
 		struct link *ln = at(state->links, i);
 		if (check_link(ln, c)) {
 			cnt++;
-			struct p_state tmp = {.s = ln->out, .ind = ind};
+			struct p_state tmp = {.s = ln->out,
+					      .ind = ind + n_checked - 1};
 			push_back(stack, &tmp);
 		}
 	}
@@ -141,7 +175,7 @@ struct automaton *make_automaton(struct vector *regex)
 	for (size_t i = 0; i < regex->size; i++) {
 		struct token *tok = at(regex, i);
 		struct state *next =
-			(tok->type_spec == STAR) ? make_state(0, 0) : current;
+			(tok->type_spec != STAR) ? make_state(0, 0) : current;
 		struct link *ln = make_link(tok, current, next);
 		if (ln == NULL) {
 			goto error_malloc;
@@ -164,19 +198,22 @@ error_malloc:
 
 int check_regex(struct automaton *a, char *s)
 {
+	n_checked = 0;
 	if (a == NULL || s == NULL)
 		return 0;
 	struct vector *stack = make_vector(sizeof(struct p_state), NULL);
 	struct state *current = at(a->states, 0);
 	size_t len = strlen(s);
 	for (size_t i = 0; i < len; i++) {
-		current = check_state(current, s[i], stack, i);
+		current = check_state(current, s, stack, i);
+		i += n_checked - 1;
 		if (current == NULL) {
 			if (stack->size == 0) {
 				free_vector(stack);
 				return 0;
 			} else {
-				struct p_state *tmp = at(stack, stack->size -1);
+				struct p_state *tmp =
+					at(stack, stack->size - 1);
 				i = tmp->ind;
 				current = tmp->s;
 			}
