@@ -188,7 +188,7 @@ int parse(struct vector *tokens)
 	// int pout = -1;
 	int ret = 0;
 
-	struct vector *args = make_vector(sizeof(*args), NULL);
+	struct vector *args = make_vector(sizeof(*args), NULL, NULL);
 
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
 		struct token *tok = at(tokens, i);

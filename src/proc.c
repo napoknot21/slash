@@ -3,6 +3,18 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+
+void extern_handler(int sig)
+{
+	switch(sig) {
+
+		case SIGINT: break;
+
+		case SIGTERM: break;
+
+	}
+}
 
 char ** exec_format(int argc, char ** argv)
 {
@@ -20,15 +32,19 @@ char ** exec_format(int argc, char ** argv)
 	}
 
 	ref[argc] = NULL;
+
 	return ref;
 }
 
-int built_out(int out, int err, int argc, char ** argv)
+int built_out(int in, int out, int err, int argc, char ** argv)
 {
 	if(argc < 0) 
 		return 1;
 	
 	char ** exargv = exec_format(argc, argv);
+
+	struct sigaction sa = { 0 };
+	sa.sa_handler = extern_handler;	
 
 	/*
 	 * Lancement du processus
@@ -46,6 +62,7 @@ int built_out(int out, int err, int argc, char ** argv)
 		 * Changements des fd de sortie
 		 */
 
+		dup2(in, STDIN_FILENO);
 		dup2(out, STDOUT_FILENO);
 		dup2(err, STDERR_FILENO);
 

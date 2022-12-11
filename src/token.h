@@ -90,7 +90,8 @@ struct token *make_token(const char *data, enum token_type type,
  *
  * @param *t The token that will be freed
  */
+void destruct_token(struct token *t);
 void free_token(struct token *t);
-void u_free_token(void *t);
+void copy_token(const struct token *, struct token *);
 
 #endif

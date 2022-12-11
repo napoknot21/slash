@@ -9,9 +9,31 @@
 
 int vector_tests()
 {
+	struct vector * svec = make_vector(
+			sizeof(struct string), 
+			(void (*)(void*)) destruct_string, 
+			(void (*)(void*, void*)) copy_str
+			);
+
+	struct string * str = make_string("dtest");
+		
+	push_back(svec, str);
+	push_back(svec, str);
+	push_back(svec, str);
+
+	free_string(str);
+
+	vtrunc(svec, 0, 2);
+	printf("%ld\n", svec->size);
+
+	struct string * cstr = front(svec);	
+	printf("cstr: %s\n", c_str(cstr));
+	
+	free_vector(svec);
+
 	long iterations = 1 + rand() % 0xffff;
 
-	struct vector *vec = make_vector(sizeof(long), NULL);
+	struct vector *vec = make_vector(sizeof(long), NULL, NULL);
 	int ass = 1;
 
 	for (long k = 0; k < iterations; k++) {
@@ -34,6 +56,7 @@ int vector_tests()
 	clear(vec);
 	ass &= !vec->size;
 	free_vector(vec);
+
 	return ass;
 }
 

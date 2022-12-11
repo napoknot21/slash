@@ -181,7 +181,11 @@ struct vector *lex(char *line)
 	line = cpy(line);
 	char *delimeters = " ";
 
-	struct vector *tokens = make_vector(sizeof(struct token), u_free_token);
+	struct vector *tokens = make_vector(
+			sizeof(struct token), 
+			(void (*)(void*)) destruct_token, 
+			(void (*)(void*, void*)) copy_token);
+
 	struct token *last = NULL;
 
 	if (tokens == NULL) {

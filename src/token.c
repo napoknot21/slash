@@ -21,19 +21,25 @@ struct token *make_token(const char *data, enum token_type type,
 	return new;
 }
 
+void destruct_token(struct token *t)
+{
+	if (!t)
+		return;
+	
+	free_string(t->data);	
+}
+
 void free_token(struct token *t)
 {
-	if (t == NULL) {
-		return;
-	}
-	u_free_token(t);
+	destruct_token(t);
 	free(t);
 }
 
-void u_free_token(void *t)
-{
-	if (t == NULL) {
-		return;
-	}
-	free_string(((struct token *)t)->data);
+void copy_token(const struct token * t, struct token * cp)
+{	
+	cp->data = malloc(sizeof(struct string));
+	
+	copy_str(t->data, cp->data);	
+	cp->type = t->type;
+	cp->type_spec = t->type_spec;
 }

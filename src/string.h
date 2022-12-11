@@ -14,8 +14,9 @@ struct string {
  */
 
 struct string *make_string(const char *);
+void destruct_string(struct string *);
 void free_string(struct string *);
-void u_free_string(struct string *str);
+void copy_str(const struct string *, struct string *);
 
 /*
  * Operation functions
