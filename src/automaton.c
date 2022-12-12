@@ -35,8 +35,9 @@ struct p_state {
 static struct link *make_link(struct token *tok, struct state *current,
 			      struct state *next);
 static struct state *make_state(int end, int start);
-static void u_free_link(void *ln);
-static void u_free_state(void *s);
+static void destruct_link(void *ln);
+static void destruct_state(void *s);
+static void copy_link(struct link *ln, struct link *cp);
 static int check_link(struct link *ln, char *c);
 static struct state *check_state(struct state *state, char *c,
 				 struct vector *stack, int ind);
@@ -44,7 +45,7 @@ static int not_in(struct vector *links, struct link *ln);
 static int check_some(struct string *keys, char c);
 static int check_none(struct string *keys, char *c);
 
-static void u_free_link(void *ln)
+static void destruct_link(void *ln)
 {
 	free_string(((struct link *)ln)->keys);
 }
@@ -54,7 +55,8 @@ static struct state *make_state(int end, int start)
 	struct state *s = malloc(sizeof(struct state));
 	if (s == NULL)
 		return NULL;
-	s->links = make_vector(sizeof(struct vector), u_free_link);
+	s->links = make_vector(sizeof(struct vector), destruct_link,
+			       (void (*)(void *, void *))copy_link);
 	if (s->links == NULL) {
 		free(s);
 		return NULL;
@@ -64,7 +66,7 @@ static struct state *make_state(int end, int start)
 	return s;
 }
 
-static void u_free_state(void *s)
+static void destruct_state(void *s)
 {
 	free_vector(((struct state *)s)->links);
 }
@@ -90,6 +92,15 @@ static struct link *make_link(struct token *tok, struct state *current,
 		return NULL;
 	}
 	return ln;
+}
+
+static void copy_link(struct link *ln, struct link *cp)
+{
+	cp->keys = malloc(sizeof(struct string));
+	copy_str(ln->keys, cp->keys);
+	cp->out = ln->out;
+	cp->in = ln->in;
+	cp->type = ln->type;
 }
 
 static int not_in(struct vector *links, struct link *ln)
@@ -169,7 +180,7 @@ struct automaton *make_automaton(struct vector *regex)
 	struct automaton *a = malloc(sizeof(struct automaton));
 	if (a == NULL)
 		return NULL;
-	a->states = make_vector(sizeof(struct state), u_free_state);
+	a->states = make_vector(sizeof(struct state), destruct_state, NULL);
 	struct state *current = make_state(0, 1);
 	push_back(a->states, current);
 	for (size_t i = 0; i < regex->size; i++) {
@@ -201,7 +212,7 @@ int check_regex(struct automaton *a, char *s)
 	n_checked = 0;
 	if (a == NULL || s == NULL)
 		return 0;
-	struct vector *stack = make_vector(sizeof(struct p_state), NULL);
+	struct vector *stack = make_vector(sizeof(struct p_state), NULL, NULL);
 	struct state *current = at(a->states, 0);
 	size_t len = strlen(s);
 	for (size_t i = 0; i < len; i++) {
