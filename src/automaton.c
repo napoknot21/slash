@@ -168,6 +168,18 @@ static struct state *check_state(struct automaton *a, struct state *state,
 	return NULL;
 }
 
+static int check_hidden(struct state *state, char *name)
+{
+	if (name[0] != '.')
+		return 1;
+	for (size_t i = 0; i < state->links->size; i++) {
+		struct link *ln = at(state->links, i);
+		if (ln->type == STAR)
+			return 0;
+	}
+	return 1;
+}
+
 struct automaton *make_automaton(struct vector *regex)
 {
 	struct automaton *a = malloc(sizeof(struct automaton));
@@ -190,7 +202,7 @@ struct automaton *make_automaton(struct vector *regex)
 		if (not_in(c_state->links, ln))
 			push_back(c_state->links, ln);
 		if (current != next) {
-			tmp = make_state(0,0);
+			tmp = make_state(0, 0);
 			push_back(a->states, tmp);
 			free(tmp);
 			current = next;
@@ -214,6 +226,10 @@ int check_regex(struct automaton *a, char *s)
 		return 0;
 	struct vector *stack = make_vector(sizeof(struct p_state), NULL, NULL);
 	struct state *current = at(a->states, 0);
+	if (!check_hidden(current, s)) {
+		free_vector(stack);
+		return 0;
+	}
 	size_t len = strlen(s);
 	for (size_t i = 0; i < len; i++) {
 		current = check_state(a, current, s + i, stack, i);
@@ -226,7 +242,7 @@ int check_regex(struct automaton *a, char *s)
 				struct p_state *tmp =
 					at(stack, stack->size - 1);
 				i = tmp->ind;
-				current = at(a->states,tmp->s);
+				current = at(a->states, tmp->s);
 			}
 		}
 	}

@@ -1,11 +1,12 @@
 #include "parser.h"
 
 #include "internals.h"
+#include "joker.h"
+#include "proc.h"
 #include "slasherrno.h"
 #include "string.h"
 #include "token.h"
 #include "vector.h"
-#include "joker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,11 +19,12 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd);
 //			int *iscmd);
 // static int compute_operator(token *tok, vector *args, int *iscmd);
 static int compute_args(struct token *tok, struct vector *args);
-static int exec(struct vector *args, int fdout, int fderr);
+static int exec(struct vector *args, int fdin, int fdout, int fderr);
 static int exec_internal(struct vector *args, int fdout, int fderr);
 static char **convertstr(struct vector *args);
 static void free_argv(char **argv, size_t size);
-// static int exec_external(vector *args, int fdin, int fdout, int fderr);
+static int exec_external(struct vector *args, int fdin, int fdout, int fderr);
+static int compute_jokers(struct token *tok, struct vector *args);
 
 static char **convertstr(struct vector *args)
 {
@@ -50,6 +52,19 @@ static void free_argv(char **argv, size_t size)
 	free(argv);
 }
 
+static int compute_jokers(struct token *tok, struct vector *args)
+{
+	struct vector *jokers = expand_jokers(tok);
+	if (jokers == NULL)
+		return push_back(args, tok);
+	for (size_t i = 0; i < jokers->size; i++) {
+		struct token *tok = at(jokers, i);
+		push_back(args, tok);
+	}
+	free_vector(jokers);
+	return 0;
+}
+
 static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 {
 	if (iscmd ||
@@ -59,8 +74,11 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 		slasherrno = EFAIL;
 		return 1;
 	}
-	//TODO add expand_joker for commands
-	return push_back(args, tok);
+	int ret = compute_jokers(tok, args);
+	struct token *cmd = (struct token *)at(args, 0);
+	cmd->type = tok->type;
+	cmd->type_spec = tok->type_spec;
+	return ret;
 }
 
 /*static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
@@ -89,15 +107,7 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 
 static int compute_args(struct token *tok, struct vector *args)
 {
-	struct vector *jokers = expand_jokers(tok);
-	if (jokers == NULL)
-		return push_back(args, tok);
-	for (size_t i = 0; i<jokers->size; i++) {
-		struct token *tok = at(jokers, i);
-		push_back(args, tok);
-	}
-	free_vector(jokers);
-	return 0;
+	return compute_jokers(tok, args);
 }
 
 static int exec_internal(struct vector *args, int fdout, int fderr)
@@ -116,17 +126,15 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 	return ret;
 }
 
-/*static int exec_external(vector *args, int fdin, int fdout, int fderr)
+static int exec_external(struct vector *args, int fdin, int fdout, int fderr)
 {
-	// token *cmd = at(args, 0);
-	// fork
-	// dup
-	// etc
-	perror("external");
+	char **argv = convertstr(args);
+	built_out(fdin, fdout, fderr, args->size, argv);
+	free_argv(argv, args->size);
 	return 0;
-}*/
+}
 
-static int exec(struct vector *args, int fdout, int fderr)
+static int exec(struct vector *args, int fdin, int fdout, int fderr)
 {
 	if (args->size == 0)
 		return slasherrno;
@@ -138,6 +146,9 @@ static int exec(struct vector *args, int fdout, int fderr)
 	switch (cmd->type_spec) {
 	case INTERNAL:
 		ret = exec_internal(args, fdout, fderr);
+		break;
+	case EXTERNAL:
+		ret = exec_external(args, fdin, fdout, fderr);
 		break;
 	default:
 		slasherrno = ENOCMD;
@@ -180,14 +191,16 @@ exec() -> function
 
 int parse(struct vector *tokens)
 {
-	// int fdin = STDIN_FILENO;
+	int fdin = STDIN_FILENO;
 	int fdout = STDOUT_FILENO;
 	int fderr = STDERR_FILENO;
 	int iscmd = 0;
 	// int pout = -1;
 	int ret = 0;
 
-	struct vector *args = make_vector(sizeof(struct token), (void (*)(void *))destruct_token, (void (*)(void *, void *))copy_token);
+	struct vector *args = make_vector(sizeof(struct token),
+					  (void (*)(void *))destruct_token,
+					  (void (*)(void *, void *))copy_token);
 
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
 		struct token *tok = at(tokens, i);
@@ -223,7 +236,7 @@ int parse(struct vector *tokens)
 		}
 	}
 	if (ret == 0)
-		ret = exec(args, fdout, fderr);
+		ret = exec(args, fdin, fdout, fderr);
 	if (args != NULL)
 		free_vector(args);
 	return (ret && slasherrno == 0) ? 0 : 1;

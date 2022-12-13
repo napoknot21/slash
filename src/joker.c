@@ -399,7 +399,6 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	if (jtokens->size == i) {
 		return 0;
 	}
-	push_back_str(path, '/');
 	struct joker_token *jt = at(jtokens, i);
 
 	if (jt->type == PATH) {
@@ -421,10 +420,6 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	automaton = make_automaton(jt->subtokens);
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
-		if (strcmp(entry->d_name, ".") == 0 ||
-		    strcmp(entry->d_name, "..") == 0) {
-			continue;
-		}
 		if (check_regex(automaton, entry->d_name)) {
 			struct string *s_name = make_string(entry->d_name);
 			push_back(entries, s_name);
@@ -443,7 +438,6 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			free(name);
 			continue;
 		}
-		push_back_str(path, '/');
 		append_cstr(path, name);
 
 		c_path = c_str(path);
@@ -460,7 +454,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		if (S_ISDIR(st.st_mode) && jt->is_dir)
 			compute_pattern(jtokens, result, path, (i + 1));
 		// truncate
-		truncate_str(path, strlen(name) + 1);
+		truncate_str(path, strlen(name));
 		free(c_path);
 		c_path = NULL;
 		free(name);
@@ -485,14 +479,20 @@ error:
 static int interpret(struct vector *jtokens, struct vector *result)
 {
 	struct joker_token *jt = (struct joker_token *)at(jtokens, 0);
-	int absolute = (jt->type == PATH) && (*at_str(jt->path, 0) == '/');
-	char *init =
-		(absolute) ? ""
-			   : getenv("PWD"); // FIXME: retirer quand cd sera fix
+	char *init;
+	int start;
+	if ((jt->type == PATH) && (*at_str(jt->path, 0) == '/')) {
+		start = 1;
+		init = "";
+	} else {
+		start = 0;
+		init = getenv("PWD"); // FIXME: retirer quand cd sera fix
+	}
 	struct string *path = make_string(init);
+	push_back_str(path, '/');
 	if (path == NULL)
 		return -1;
-	int ret = compute_pattern(jtokens, result, path, 0);
+	int ret = compute_pattern(jtokens, result, path, start);
 	if (path != NULL)
 		free_string(path);
 	return ret;
