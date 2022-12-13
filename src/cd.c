@@ -74,7 +74,7 @@ int builtin_cd(int out, int err, int argc, char **argv)
 
 		push_back(spl_pwd, ppwd_str);
 		rpwd_str = bind_str(spl_pwd, '/');
-		free(ppwd_str);
+		free_string(ppwd_str);
 		ppwd_str = NULL;
 
 		if(kind == PHYSICAL_PATH) {

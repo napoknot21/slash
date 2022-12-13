@@ -42,8 +42,7 @@ static enum token_type_spec compute_token_type(char c);
 static int push_back_vec(struct vector *u, struct vector *v);
 static struct token *make_slash();
 static struct vector *parse(struct vector *tokens);
-static struct joker_token *add_token(struct string *s,
-				     struct joker_token *last,
+static struct joker_token *add_token(struct string *s, struct joker_token *last,
 				     struct vector *subtokens);
 static struct vector *expand_bracket(struct vector *subtokens);
 static int compute_pattern(struct vector *jtokens, struct vector *result,
@@ -68,8 +67,6 @@ static struct joker_token *make_jt(struct string *value,
 	return new;
 }
 
-
-
 static void destruct_jt(void *jt)
 {
 	struct joker_token *del = (struct joker_token *)jt;
@@ -88,7 +85,8 @@ static void copy_jt(struct joker_token *jt, struct joker_token *cp)
 	cp->is_dir = jt->is_dir;
 }
 
-static void free_jt(struct joker_token *jt) {
+static void free_jt(struct joker_token *jt)
+{
 	destruct_jt(jt);
 	free(jt);
 }
@@ -196,8 +194,8 @@ static struct vector *lex(struct token *t)
 		goto error_null;
 	if (*line == '/') {
 		struct token *t = make_slash();
-		push_back(tokens,t);
-		free(t);
+		push_back(tokens, t);
+		free_token(t);
 	}
 	char *delimiters = "/";
 	char *s = strtok(line, delimiters);
@@ -344,12 +342,13 @@ static struct vector *parse(struct vector *tokens)
 		}
 	}
 	add_last_token(result, buf, subtoks);
+	free_string(buf);
+	free_vector(subtoks);
 	if (has_hyphen || has_bracket) {
+		result->free = destruct_jt;
 		free_vector(result);
 		return NULL;
 	}
-	free_string(buf);
-	free_vector(subtoks);
 	return result;
 }
 
@@ -455,7 +454,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		    ((!jt->is_dir) || (jt->is_dir && S_ISDIR(st.st_mode)))) {
 			struct token *tok = make_token(c_path, ARG, SPEC_NONE);
 			push_back(result, tok);
-			//free(tok->data);
+			// free(tok->data);
 			free(tok);
 		}
 		if (S_ISDIR(st.st_mode) && jt->is_dir)
@@ -510,9 +509,9 @@ struct vector *expand_jokers(struct token *tok)
 	if (l == NULL)
 		return NULL;
 	struct vector *p = parse(l);
+	free_vector(l);
 	if (p == NULL)
 		return NULL;
-	free_vector(l);
 	struct vector *result = make_vector(
 		sizeof(struct token), (void (*)(void *))destruct_token, NULL);
 	interpret(p, result);
