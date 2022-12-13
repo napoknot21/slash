@@ -107,7 +107,7 @@ static int not_in(struct vector *links, struct link *ln)
 {
 	for (size_t i = 0; i < links->size; i++) {
 		struct link *tmp = at(links, i);
-		if (cmp_str(tmp->keys, ln->keys))
+		if (cmp_str(tmp->keys, ln->keys) == 0)
 			return 0;
 	}
 	return 1;
@@ -197,6 +197,7 @@ struct automaton *make_automaton(struct vector *regex)
 			current = next;
 			push_back(a->states, next);
 		}
+		destruct_link(ln);
 		free(ln);
 	}
 	current->end = 1;
@@ -216,7 +217,7 @@ int check_regex(struct automaton *a, char *s)
 	struct state *current = at(a->states, 0);
 	size_t len = strlen(s);
 	for (size_t i = 0; i < len; i++) {
-		current = check_state(current, s, stack, i);
+		current = check_state(current, s + i, stack, i);
 		i += n_checked - 1;
 		if (current == NULL) {
 			if (stack->size == 0) {

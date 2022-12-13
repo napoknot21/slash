@@ -47,6 +47,7 @@ static struct joker_token *add_token(struct string *s, struct vector *result,
 static struct vector *expand_bracket(struct vector *subtokens);
 static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i);
+static int has_joker(struct string *s);
 
 //###################################################
 static struct joker_token *make_jt(struct string *value,
@@ -137,6 +138,7 @@ static struct vector *build_tokens(char *arg)
 		free(t);
 		return tokens;
 	}
+
 	size_t start = 0;
 	size_t end = 0;
 	int has_bracket = 0;
@@ -150,11 +152,12 @@ static struct vector *build_tokens(char *arg)
 			has_bracket = 1;
 		if (spec == RBRACKET)
 			has_bracket = 0;
-		if (spec == SPEC_NONE && !has_bracket) {
+		if (last == spec && spec == SPEC_NONE && !has_bracket) {
 			end++;
 		} else {
 			struct token *t = compute_tok(arg, start, end, last);
 			start = end;
+			end++;
 			push_back(tokens, t);
 			free(t);
 			last = spec;
@@ -175,12 +178,17 @@ static struct vector *lex(struct token *t)
 	struct vector *tokens =
 		make_vector(sizeof(*t), (void (*)(void *))destruct_token,
 			    (void (*)(void *, void *))copy_token);
-	if (tokens == NULL)
+	if (slash == NULL || tokens == NULL)
 		goto error_null;
 	line = c_str(t->data);
 	int is_dir = (*at_str(t->data, size_str(t->data) - 1) == '/');
 	if (line == NULL)
 		goto error_null;
+	if (*line == '/') {
+		struct token *t = make_slash();
+		push_back(tokens,t);
+		free(t);
+	}
 	char *delimiters = "/";
 	char *s = strtok(line, delimiters);
 	while (s != NULL) {
@@ -203,6 +211,8 @@ error_null:
 		free_vector(tokens);
 	if (line != NULL)
 		free(line);
+	if (slash != NULL)
+		free_token(slash);
 	return NULL;
 }
 
@@ -210,22 +220,21 @@ static struct joker_token *add_token(struct string *buf, struct vector *result,
 				     struct joker_token *last,
 				     struct vector *subtokens)
 {
+	struct joker_token *jt = NULL;
 	if (last != NULL && subtokens->size == 1 && last->type == PATH) {
 		push_back_str(last->path, '/');
 		append(last->path, buf);
 		clear(subtokens);
 		clear_str(buf);
-		return NULL;
 	} else {
-		if (last != NULL) {
-			push_back(result, last);
-			free(last);
-		}
-		if (has_bracket) {
+		if (last == NULL && size_str(buf) == 0)
+			push_back_str(buf, '/');
+		if (has_bracket)
 			subtokens = expand_bracket(subtokens);
-		}
-		return make_jt(buf, subtokens, REGEX, 1);
+		enum token_type_spec type = has_joker(buf) ? REGEX : PATH;
+		jt = make_jt(buf, subtokens, type, 1);
 	}
+	return jt;
 }
 
 static struct joker_token *compute_joker_tok(struct token *tok,
@@ -289,6 +298,20 @@ static struct joker_token *compute_joker_tok(struct token *tok,
 	return NULL;
 }
 
+static void add_last_token(struct vector *result, struct string *buf,
+			   struct vector *subtoks, struct joker_token *last)
+{
+	if (size_str(buf) == 0) {
+		return;
+	}
+	enum token_type_spec type = has_joker(buf) ? REGEX : PATH;
+	struct joker_token *tmp = make_jt(buf, subtoks, type, 0);
+	push_back(result, tmp);
+	free(tmp);
+	clear(subtoks);
+	clear_str(buf);
+}
+
 static struct vector *parse(struct vector *tokens)
 {
 	struct vector *subtoks = make_vector(
@@ -297,24 +320,25 @@ static struct vector *parse(struct vector *tokens)
 	struct joker_token *last = NULL;
 	struct string *buf = make_string("");
 	struct vector *result =
-		make_vector(sizeof(struct joker_token), destruct_jt, NULL);
+		make_vector(sizeof(struct joker_token), destruct_jt,
+			    (void (*)(void *, void *))copy_jt);
 	for (size_t i = 0; i < tokens->size && error == 0; i++) {
 		struct token *tok = at(tokens, i);
 		struct joker_token *tmp =
 			compute_joker_tok(tok, buf, result, last, subtoks);
 		if (tmp != NULL) {
 			push_back(result, tmp);
-			if (last != NULL)
+			clear(subtoks);
+			clear_str(buf);
+			if (last != NULL) {
 				free(last);
+			}
 			last = tmp;
 		}
 	}
-	free_string(buf);
+	add_last_token(result, buf, subtoks, last);
 	if (last != NULL) {
-		if (size_str(last->path) != 0)
-			last->is_dir = 0;
-		else
-			pop_back(result);
+		destruct_jt(last);
 		free(last);
 	}
 
@@ -353,13 +377,16 @@ static void add_path(struct joker_token *jt, struct vector *result,
 	struct stat st;
 	char *c_path = c_str(path);
 	if (size_str(path) > PATH_MAX || stat(c_path, &st) ||
-	    jt->is_dir != S_ISDIR(st.st_mode)) {
+	    (jt->is_dir && S_ISDIR(st.st_mode))) {
 		free(c_path);
 		return;
 	}
-	push_back(result, path);
+	struct token *t = make_token(c_path, ARG, SPEC_NONE);
+	push_back(result, t);
+	free(t);
 	free(c_path);
 }
+
 static int compute_pattern(struct vector *jtokens, struct vector *result,
 			   struct string *path, size_t i)
 {
@@ -369,6 +396,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	if (jtokens->size == i) {
 		return 0;
 	}
+	push_back_str(path, '/');
 	struct joker_token *jt = at(jtokens, i);
 
 	if (jt->type == PATH) {
@@ -376,7 +404,9 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		i++;
 		if (jtokens->size <= i) {
 			add_path(jt, result, path);
+			return 0;
 		}
+		jt = at(jtokens, i);
 	}
 	char *c_path = c_str(path);
 	if ((dir = opendir(c_path)) == NULL)
@@ -418,7 +448,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			goto error;
 		}
 		if ((jtokens->size == i + 1) &&
-		    (jt->is_dir == S_ISDIR(st.st_mode))) {
+		    ((!jt->is_dir) || (jt->is_dir && S_ISDIR(st.st_mode)))) {
 			struct token *tok = make_token(c_path, ARG, SPEC_NONE);
 			push_back(result, tok);
 			free(tok);
@@ -450,7 +480,12 @@ error:
 
 static int interpret(struct vector *jtokens, struct vector *result)
 {
-	struct string *path = make_string(".");
+	struct joker_token *jt = (struct joker_token *)at(jtokens, 0);
+	int absolute = (jt->type == PATH) && (*at_str(jt->path, 0) == '/');
+	char *init =
+		(absolute) ? ""
+			   : getenv("PWD"); // FIXME: retirer quand cd sera fix
+	struct string *path = make_string(init);
 	if (path == NULL)
 		return -1;
 	int ret = compute_pattern(jtokens, result, path, 0);
