@@ -8,7 +8,7 @@ struct string *make_string(const char *ch)
 	struct string *str = malloc(sizeof(struct string));
 	str->cnt = make_vector(sizeof(char), NULL, NULL);
 
-	if(ch) {
+	if (ch) {
 		size_t ch_s = strlen(ch);
 
 		reserve(str->cnt, ch_s * 2);
@@ -25,7 +25,7 @@ struct string *make_string(const char *ch)
 
 void destruct_string(struct string *str)
 {
-	free_vector(str->cnt);	
+	free_vector(str->cnt);
 }
 
 void free_string(struct string *str)
@@ -34,10 +34,10 @@ void free_string(struct string *str)
 	free(str);
 }
 
-void copy_str(const struct string *str, struct string * cp) 
-{	
-	cp->cnt = malloc(sizeof(struct vector)); 
-	copy_vec(str->cnt, cp->cnt);		
+void copy_str(const struct string *str, struct string *cp)
+{
+	cp->cnt = malloc(sizeof(struct vector));
+	copy_vec(str->cnt, cp->cnt);
 }
 
 void push_back_str(struct string *str, char c)
@@ -63,13 +63,14 @@ void append(struct string *dst, struct string *src)
 
 	reserve(dst->cnt, ncap);
 
-	memmove((void *)((char *) dst->cnt->data + dst_s), src->cnt->data, src_s);
+	memmove((void *)((char *)dst->cnt->data + dst_s), src->cnt->data,
+		src_s);
 	dst->cnt->size += src_s;
 }
 
-void append_cstr(struct string * dst, const char * src)
+void append_cstr(struct string *dst, const char *src)
 {
-	struct string * tstr = make_string(src);
+	struct string *tstr = make_string(src);
 	append(dst, tstr);
 
 	free_string(tstr);
@@ -82,17 +83,17 @@ void clear_str(struct string *str)
 
 char *at_str(struct string *str, size_t pos)
 {
-	return (char*) at(str->cnt, pos);
+	return (char *)at(str->cnt, pos);
 }
 
 char *front_str(struct string *str)
 {
-	return (char*) front(str->cnt);
+	return (char *)front(str->cnt);
 }
 
 char *back_str(struct string *str)
 {
-	return (char*) back(str->cnt);
+	return (char *)back(str->cnt);
 }
 
 struct string *substr(struct string *str, size_t from, size_t to)
@@ -123,7 +124,8 @@ size_t size_str(struct string *str)
 
 int cmp_str(struct string *str_a, struct string *str_b)
 {
-	if (size_str(str_a) != size_str(str_b)) return 1;
+	if (size_str(str_a) != size_str(str_b))
+		return 1;
 
 	for (size_t k = 0; k < str_a->cnt->size; k++) {
 		if (*at_str(str_a, k) != *at_str(str_b, k)) {
@@ -136,18 +138,19 @@ int cmp_str(struct string *str_a, struct string *str_b)
 
 char *c_str(struct string *str)
 {
-	if(!str) return NULL;
+	if (!str)
+		return NULL;
 
 	size_t size = size_str(str);
-	char * data = malloc(size + 1);
+	char *data = malloc(size + 1);
 
 	*(data + size) = 0x0;
 
-	for(size_t k = 0; k < size; k++) {
+	for (size_t k = 0; k < size; k++) {
 		data[k] = *at_str(str, k);
 	}
 
-	return (char *) data;
+	return (char *)data;
 }
 
 int empty_str(struct string *str)
@@ -155,46 +158,47 @@ int empty_str(struct string *str)
 	return !str ? 0 : size_str(str);
 }
 
-struct vector * split_str(struct string *str, char sep)
+struct vector *split_str(struct string *str, char sep)
 {
 	size_t k = 0, beg = 0;
 	size_t str_s = size_str(str);
 
-	struct vector * svec = make_vector(
-			sizeof(struct string), 
-			(void (*)(void*)) destruct_string, 
-			(void (*)(void*, void*)) copy_str
-			);
+	struct vector *svec = make_vector(sizeof(struct string),
+					  (void (*)(void *))destruct_string, (void (*)(void *, void *))copy_str);
 
-	for(; k < str_s; k++) {
+	for (; k < str_s; k++) {
 
 		char curr = *at_str(str, k);
 
-		if(curr == sep || k + 1 == str_s) {
+		if (curr == sep || k + 1 == str_s) {
 
-			struct string * sub = substr(str, beg, k);
-			if(empty_str(sub)) push_back(svec, sub);
+			struct string *sub = substr(str, beg, k);
+			if (empty_str(sub)) {
+				push_back(svec, sub);
+				free_string(sub);
+			} else {
+				free(sub);
+			}
 
-			free(sub);
+
 
 			beg = k + 1;
 		}
-
 	}
 
 	return svec;
 }
 
-struct string * bind_str(struct vector *vec, char sep)
+struct string *bind_str(struct vector *vec, char sep)
 {
-	struct string * res = make_string(NULL);
+	struct string *res = make_string(NULL);
 	push_back_str(res, '/');
 
-	for(size_t i = 0; i < vec->size; i++) {
+	for (size_t i = 0; i < vec->size; i++) {
 
 		append(res, at(vec, i));
-		if(i + 1 < vec->size) push_back_str(res, sep);
-
+		if (i + 1 < vec->size)
+			push_back_str(res, sep);
 	}
 
 	return res;

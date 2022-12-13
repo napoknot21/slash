@@ -96,7 +96,7 @@ static int compute_args(struct token *tok, struct vector *args)
 		struct token *tok = at(jokers, i);
 		push_back(args, tok);
 	}
-	free(jokers);
+	free_vector(jokers);
 	return 0;
 }
 
@@ -143,7 +143,6 @@ static int exec(struct vector *args, int fdout, int fderr)
 		slasherrno = ENOCMD;
 		return ENOCMD;
 	}
-	clear(args);
 	slasherrno = ret;
 	return ret;
 }
@@ -188,7 +187,7 @@ int parse(struct vector *tokens)
 	// int pout = -1;
 	int ret = 0;
 
-	struct vector *args = make_vector(sizeof(*args), NULL, NULL);
+	struct vector *args = make_vector(sizeof(struct token), (void (*)(void *))destruct_token, (void (*)(void *, void *))copy_token);
 
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
 		struct token *tok = at(tokens, i);

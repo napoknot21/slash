@@ -29,7 +29,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 		free(tmp);
 
 		return ret;
-*/	
+*/
 		clear_str(wd);
 
 	}
@@ -55,13 +55,13 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	for(size_t i = 0; i < path_split->size; i++) {
 
 		struct string * pith = at(path_split, i);
-		
+
 		if(!cmp_str(pith, curr_str))
 			continue;
 
 		if(!cmp_str(pith, back_up_str)) {
 
-			pop_back(wd_split);	
+			pop_back(wd_split);
 
 		} else {
 
@@ -80,8 +80,7 @@ struct string * normalize_path(struct string * path, struct string * wd)
 	struct string * res = bind_str(wd_split, '/');
 
 	free_vector(wd_split);
-	free(path_split->data);
-	free(path_split);
+	free_vector(path_split);
 
 	return res;
 }

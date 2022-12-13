@@ -16,8 +16,8 @@ struct state {
 };
 
 struct link {
-	struct state *in;
-	struct state *out;
+	int in;
+	int out;
 	struct string *keys; //(start, end) with ASCII code for intervals such
 			     // as [a-e];
 	enum token_type_spec type;
@@ -28,19 +28,18 @@ struct automaton {
 };
 
 struct p_state {
-	struct state *s;
+	int s;
 	int ind;
 };
 
-static struct link *make_link(struct token *tok, struct state *current,
-			      struct state *next);
+static struct link *make_link(struct token *tok, int current, int next);
 static struct state *make_state(int end, int start);
 static void destruct_link(void *ln);
 static void destruct_state(void *s);
 static void copy_link(struct link *ln, struct link *cp);
 static int check_link(struct link *ln, char *c);
-static struct state *check_state(struct state *state, char *c,
-				 struct vector *stack, int ind);
+static struct state *check_state(struct automaton *a, struct state *state,
+				 char *c, struct vector *stack, int ind);
 static int not_in(struct vector *links, struct link *ln);
 static int check_some(struct string *keys, char c);
 static int check_none(struct string *keys, char *c);
@@ -71,8 +70,7 @@ static void destruct_state(void *s)
 	free_vector(((struct state *)s)->links);
 }
 
-static struct link *make_link(struct token *tok, struct state *current,
-			      struct state *next)
+static struct link *make_link(struct token *tok, int current, int next)
 {
 	struct link *ln = malloc(sizeof(struct link));
 	if (ln == NULL)
@@ -86,11 +84,6 @@ static struct link *make_link(struct token *tok, struct state *current,
 	ln->in = current;
 	ln->out = next;
 	ln->type = tok->type_spec;
-	if (ln->out == NULL) {
-		free_string(ln->keys);
-		free(ln);
-		return NULL;
-	}
 	return ln;
 }
 
@@ -153,8 +146,8 @@ static int check_link(struct link *ln, char *c)
 	}
 }
 
-static struct state *check_state(struct state *state, char *c,
-				 struct vector *stack, int ind)
+static struct state *check_state(struct automaton *a, struct state *state,
+				 char *c, struct vector *stack, int ind)
 {
 	int cnt = 0;
 	for (size_t i = 0; i < state->links->size; i++) {
@@ -168,7 +161,7 @@ static struct state *check_state(struct state *state, char *c,
 	}
 	if (cnt != 0) {
 		struct p_state *p_ret = at(stack, stack->size - 1);
-		struct state *ret = p_ret->s;
+		struct state *ret = at(a->states, p_ret->s);
 		pop_back(stack);
 		return ret;
 	}
@@ -181,26 +174,32 @@ struct automaton *make_automaton(struct vector *regex)
 	if (a == NULL)
 		return NULL;
 	a->states = make_vector(sizeof(struct state), destruct_state, NULL);
-	struct state *current = make_state(0, 1);
-	push_back(a->states, current);
+	struct state *tmp = make_state(0, 1);
+	struct state *next = NULL;
+	push_back(a->states, tmp);
+	free(tmp);
+	int current = 0;
 	for (size_t i = 0; i < regex->size; i++) {
 		struct token *tok = at(regex, i);
-		struct state *next =
-			(tok->type_spec != STAR) ? make_state(0, 0) : current;
+		int next = (tok->type_spec != STAR) ? current + 1 : current;
 		struct link *ln = make_link(tok, current, next);
 		if (ln == NULL) {
 			goto error_malloc;
 		}
-		if (not_in(current->links, ln))
-			push_back(current->links, ln);
+		struct state *c_state = at(a->states, current);
+		if (not_in(c_state->links, ln))
+			push_back(c_state->links, ln);
 		if (current != next) {
+			tmp = make_state(0,0);
+			push_back(a->states, tmp);
+			free(tmp);
 			current = next;
-			push_back(a->states, next);
 		}
 		destruct_link(ln);
 		free(ln);
 	}
-	current->end = 1;
+	struct state *c_state = at(a->states, current);
+	c_state->end = 1;
 	return a;
 error_malloc:
 	if (a != NULL)
@@ -217,7 +216,7 @@ int check_regex(struct automaton *a, char *s)
 	struct state *current = at(a->states, 0);
 	size_t len = strlen(s);
 	for (size_t i = 0; i < len; i++) {
-		current = check_state(current, s + i, stack, i);
+		current = check_state(a, current, s + i, stack, i);
 		i += n_checked - 1;
 		if (current == NULL) {
 			if (stack->size == 0) {
@@ -227,10 +226,11 @@ int check_regex(struct automaton *a, char *s)
 				struct p_state *tmp =
 					at(stack, stack->size - 1);
 				i = tmp->ind;
-				current = tmp->s;
+				current = at(a->states,tmp->s);
 			}
 		}
 	}
+	free_vector(stack);
 	return current->end;
 }
 
