@@ -27,7 +27,7 @@ char ** exec_format(int argc, char ** argv)
 
 	for(int i = 0; i < argc; i++) {
 
-		ref[i] = argv[i];	
+		ref[i] = argv[i];
 
 	}
 
@@ -38,23 +38,24 @@ char ** exec_format(int argc, char ** argv)
 
 int built_out(int in, int out, int err, int argc, char ** argv)
 {
-	if(argc < 0) 
+	if(argc < 0)
 		return 1;
-	
+
 	char ** exargv = exec_format(argc, argv);
 
 	struct sigaction sa = { 0 };
-	sa.sa_handler = extern_handler;	
+	sa.sa_handler = extern_handler;
 
 	/*
 	 * Lancement du processus
 	 */
 
 	pid_t process = fork();
+	int retval = -1;
 
 	switch(process) {
 
-	case -1: 
+	case -1:
 		return 1;
 
 	case 0:
@@ -74,16 +75,16 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 
 		if(status == -1) {
 
-			dprintf(err, "%s: erreur à l'éxecution!\n", argv[0]);	
+			dprintf(err, "%s: erreur à l'éxecution!\n", argv[0]);
 
 		}
 
 		break;
 
 	default:
-		wait(NULL);
+		wait(&retval);
 		free(exargv);
 	}
 
-	return 0;
+	return WEXITSTATUS(retval);
 }

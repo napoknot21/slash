@@ -118,7 +118,6 @@ static enum token_type_spec compute_token_type(char c)
 		return HYPHEN;
 	default:
 		return SPEC_NONE;
-		break;
 	}
 }
 
@@ -154,23 +153,39 @@ static struct vector *build_tokens(char *arg)
 
 	for (size_t i = 0; i < len; i++) {
 		enum token_type_spec spec = compute_token_type(arg[i]);
+
 		if (last == INTERNAL)
 			last = spec;
-		if (spec == LBRACKET)
+		switch (spec) {
+		case LBRACKET:
 			has_bracket = 1;
-		if (spec == RBRACKET)
+			break;
+		case RBRACKET:
 			has_bracket = 0;
-		if (last == spec && spec == SPEC_NONE && !has_bracket) {
+			break;
+		case STAR:
 			end++;
-		} else {
+			struct token *t = compute_tok(arg, start, end, last);
+			start = end;
+			push_back(tokens, t);
+			free(t);
+			break;
+
+		case SPEC_NONE:
+			end++;
+			break;
+
+		default: {
 			struct token *t = compute_tok(arg, start, end, last);
 			start = end;
 			end++;
 			push_back(tokens, t);
 			free(t);
-			last = spec;
 		}
+		}
+		last = spec;
 	}
+
 	if (start < len) {
 		struct token *t = compute_tok(arg, start, end, last);
 		push_back(tokens, t);
@@ -229,17 +244,20 @@ static struct joker_token *add_token(struct string *buf,
 				     struct vector *subtokens)
 {
 	struct joker_token *jt = NULL;
-	if (last != NULL && subtokens->size == 1 && last->type == PATH) {
+	enum token_type_spec type = has_joker(buf) ? REGEX : PATH;
+	if (last != NULL && subtokens->size == 1 && last->type == PATH &&
+	    type == PATH) {
 		push_back_str(last->path, '/');
 		append(last->path, buf);
 		clear(subtokens);
 		clear_str(buf);
 	} else {
-		if (last == NULL && size_str(buf) == 0)
+		if (last == NULL && size_str(buf) == 0) {
 			push_back_str(buf, '/');
+			return NULL;
+		}
 		if (has_bracket)
 			subtokens = expand_bracket(subtokens);
-		enum token_type_spec type = has_joker(buf) ? REGEX : PATH;
 		jt = make_jt(buf, subtokens, type, 1);
 	}
 	return jt;
@@ -395,7 +413,9 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 {
 	struct vector *entries = NULL;
 	struct automaton *automaton = NULL;
+	char *c_path = NULL;
 	DIR *dir = NULL;
+	struct stat st;
 	if (jtokens->size == i) {
 		return 0;
 	}
@@ -405,16 +425,27 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		append(path, jt->path);
 		i++;
 		if (jtokens->size <= i) {
-			add_path(jt, result, path);
+			c_path = c_str(path);
+			if (stat(c_path, &st) == 0)
+				add_path(jt, result, path); // check exist
+			free(c_path);
+			truncate_str(path, size_str(jt->path));
 			return 0;
 		}
+		push_back_str(path, '/');
 		jt = at(jtokens, i);
 	}
-	char *c_path = c_str(path);
-	if ((dir = opendir(c_path)) == NULL)
+
+	if (size_str(path) == 0) {
+		dir = opendir(".");
+	} else {
+		c_path = c_str(path);
+		dir = opendir(c_path);
+		free(c_path);
+		c_path = NULL;
+	}
+	if ((dir) == NULL)
 		goto error;
-	free(c_path);
-	c_path = NULL;
 	entries = make_vector(sizeof(struct string),
 			      (void (*)(void *))destruct_string, NULL);
 	automaton = make_automaton(jt->subtokens);
@@ -430,7 +461,6 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	automaton = NULL;
 	closedir(dir);
 	dir = NULL;
-	struct stat st;
 	size_t j = 0;
 	for (j = 0; j < entries->size; j++) {
 		char *name = c_str(at(entries, j));
@@ -451,12 +481,15 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			// free(tok->data);
 			free(tok);
 		}
-		if (S_ISDIR(st.st_mode) && jt->is_dir)
-			compute_pattern(jtokens, result, path, (i + 1));
-		// truncate
-		truncate_str(path, strlen(name));
 		free(c_path);
 		c_path = NULL;
+		if (S_ISDIR(st.st_mode) && jt->is_dir) {
+			push_back_str(path, '/');
+			compute_pattern(jtokens, result, path, (i + 1));
+			pop_back_str(path);
+		}
+		// truncate
+		truncate_str(path, strlen(name));
 		free(name);
 	}
 	free_vector(entries);
@@ -479,20 +512,10 @@ error:
 static int interpret(struct vector *jtokens, struct vector *result)
 {
 	struct joker_token *jt = (struct joker_token *)at(jtokens, 0);
-	char *init;
-	int start;
-	if ((jt->type == PATH) && (*at_str(jt->path, 0) == '/')) {
-		start = 1;
-		init = "";
-	} else {
-		start = 0;
-		init = getenv("PWD"); // FIXME: retirer quand cd sera fix
-	}
-	struct string *path = make_string(init);
-	push_back_str(path, '/');
+	struct string *path = make_string("");
 	if (path == NULL)
 		return -1;
-	int ret = compute_pattern(jtokens, result, path, start);
+	int ret = compute_pattern(jtokens, result, path, 0);
 	if (path != NULL)
 		free_string(path);
 	return ret;

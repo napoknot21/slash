@@ -128,8 +128,11 @@ static int check_none(struct string *keys, char *c)
 	char *key = c_str(keys);
 	int ret = strcmp(key, tmp);
 	free(key);
-	n_checked = size;
-	return ret == 0;
+	if (ret == 0) {
+		n_checked = size;
+		return 1;
+	}
+	return 0;
 }
 static int check_link(struct link *ln, char *c)
 {

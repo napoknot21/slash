@@ -129,9 +129,9 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 static int exec_external(struct vector *args, int fdin, int fdout, int fderr)
 {
 	char **argv = convertstr(args);
-	built_out(fdin, fdout, fderr, args->size, argv);
+	int ret = built_out(fdin, fdout, fderr, args->size, argv);
 	free_argv(argv, args->size);
-	return 0;
+	return ret;
 }
 
 static int exec(struct vector *args, int fdin, int fdout, int fderr)
