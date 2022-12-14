@@ -8,6 +8,6 @@
 #define PHYSICAL_PATH 1
 
 //extern const char * lastwd;
-struct string *normalize_path(struct string *, struct string *);
+struct string *normalize_path(struct string *, struct string *, int);
 
 #endif

@@ -165,27 +165,28 @@ struct vector *split_str(struct string *str, char sep)
 	struct vector * svec = make_vector(
 			sizeof(struct string), 
 			(void (*)(void*)) destruct_string, 
-			(void (*)(void*, void*)) copy_str);
+			(void (*)(void*, void*)) copy_str);	
 
 	for (; k < str_s; k++) {
 
-		char curr = *at_str(str, k);
+		char curr = *at_str(str, k);	
 
 		if (curr == sep || k + 1 == str_s) {
 
-			struct string *sub = substr(str, beg, k);
-			if (empty_str(sub)) {
-				push_back(svec, sub);
-				free_string(sub);
-			} else {
-				free(sub);
+			struct string *sub = substr(str, beg, k);	
+
+			if(!sub) {
+				beg = k + 1;
+				continue;
 			}
 
+			if (size_str(sub))
+				push_back(svec, sub);	
 
 			free_string(sub);
 			beg = k + 1;
 		}
-	}
+	}	
 
 	return svec;
 }
