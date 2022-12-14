@@ -32,6 +32,7 @@ int builtin_exit(int out, int err, int argc, char ** argv)
 		code = (short) scode;
 
 	}
+	is_exit_call = 1;
 
 	return code;
 }

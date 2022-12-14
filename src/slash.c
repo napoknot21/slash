@@ -20,8 +20,6 @@
 #define EXIT_NAME "exit"
 
 static char *compute_prompt();
-static int is_exit_call(struct token *tok);
-
 static char *compute_prompt()
 {
 	int color_len = strlen(C_RED) + 1;
@@ -33,7 +31,7 @@ static char *compute_prompt()
 	char *color = (slasherrno != 0) ? C_RED : C_GREEN;
 	char *pwd = getenv("PWD");
 	char err[4];
-	if (slasherrno == ESIG)
+	if (slasherrno == S_ESIG)
 		memcpy(err,"SIG",4);
 	else
 		sprintf(err, "%d", slasherrno);
@@ -51,14 +49,6 @@ static char *compute_prompt()
 	return p;
 }
 
-static int is_exit_call(struct token *tok)
-{
-	char *cmd = c_str(tok->data);
-	int ret = strcmp(EXIT_NAME, cmd) == 0;
-	free(cmd);
-	return ret;
-}
-
 int main()
 {
 	char *line;
@@ -66,15 +56,16 @@ int main()
 	char *prompt = compute_prompt();
 	while ((line = readline(prompt)) != NULL) {
 		free(prompt);
+		prompt = NULL;
 		add_history(line);
 		struct vector *tokens = lex(line);
 		free(line);
 		if (tokens == NULL) {
-			slasherrno = EFAIL;
+			slasherrno = S_EFAIL;
 			break;
 		}
 		parse(tokens);
-		if (tokens->size != 0 && is_exit_call(at(tokens, 0))) {
+		if (tokens->size != 0 && is_exit_call) {
 			free_vector(tokens);
 			break;
 		}
@@ -82,6 +73,9 @@ int main()
 		free_vector(tokens);
 		prompt = compute_prompt();
 	}
+	if (prompt != NULL)
+		free(prompt);
 	rl_clear_history();
+	dprintf(1, "Bye !\n\n");
 	return slasherrno;
 }

@@ -71,13 +71,15 @@ static int compute_cmd(struct token *tok, struct vector *args, int iscmd)
 	    (tok->type_spec != INTERNAL && tok->type_spec != EXTERNAL)) {
 		// raise error
 		printf("error cmd");
-		slasherrno = EFAIL;
+		slasherrno = S_EFAIL;
 		return 1;
 	}
 	int ret = compute_jokers(tok, args);
 	struct token *cmd = (struct token *)at(args, 0);
 	cmd->type = tok->type;
-	cmd->type_spec = tok->type_spec;
+	char *name = c_str(cmd->data);
+	cmd->type_spec = is_internal(name) ? INTERNAL : EXTERNAL;
+	free(name);
 	return ret;
 }
 
@@ -116,10 +118,10 @@ static int exec_internal(struct vector *args, int fdout, int fderr)
 	struct internal c = get_internal(name->data);
 	char **argv = convertstr(args);
 	if (c.cmd == NULL) {
-		return ENOCMD;
+		return S_ENOCMD;
 	}
 	if (argv == NULL) {
-		return EFAIL;
+		return S_EFAIL;
 	}
 	int ret = c.cmd(fdout, fderr, (int)args->size, argv);
 	free_argv(argv, args->size);
@@ -151,8 +153,8 @@ static int exec(struct vector *args, int fdin, int fdout, int fderr)
 		ret = exec_external(args, fdin, fdout, fderr);
 		break;
 	default:
-		slasherrno = ENOCMD;
-		return ENOCMD;
+		slasherrno = S_ENOCMD;
+		return S_ENOCMD;
 	}
 	slasherrno = ret;
 	return ret;

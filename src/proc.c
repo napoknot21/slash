@@ -1,9 +1,11 @@
 #include "proc.h"
+#include "slasherrno.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <errno.h>
 
 void extern_handler(int sig)
 {
@@ -76,15 +78,16 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 		if(status == -1) {
 
 			dprintf(err, "%s: erreur à l'éxecution!\n", argv[0]);
+			free(exargv);
+			exit(of_errno());
 
 		}
-
-		break;
-
+		//fall through
 	default:
 		wait(&retval);
 		free(exargv);
+		return WEXITSTATUS(retval);
 	}
 
-	return WEXITSTATUS(retval);
+
 }

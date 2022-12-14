@@ -1,16 +1,18 @@
 #ifndef SLASH_SLASHERR_H
 #define SLASH_SLASHERR_H
 
-#define EREDIRECT 1
-#define EFAIL 1
-#define ECDNOTDIR 63
-#define ENOCMD 127
-#define EACCES 126
-#define EKILL 128
-#define ESIG 255
-#define EOBOUND 255
+#define S_EREDIRECT 1
+#define S_EFAIL 1
+#define S_ECDNOTDIR 63
+#define S_ENOCMD 127
+#define S_EACCES 126
+#define S_ESKILL 128
+#define S_ESIG 255
+#define S_EOBOUND 255
 
 extern short slasherrno;
-char *get_error();
+extern short is_exit_call;
+//char *get_error();
+int of_errno();
 
 #endif
