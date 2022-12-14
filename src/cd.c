@@ -18,9 +18,7 @@ ssize_t physical_path(char * dst, size_t size, const char * path)
 
 int builtin_cd(int out, int err, int argc, char **argv)
 {
-	const char *path = getenv("HOME"), *pwd = getenv("PWD");
-
-	//if(!lastwd) lastwd = path;
+	const char *path = getenv("HOME"), *pwd = getenv("PWD");	
 
 	char ppwd[PHYSICAL_PATH_BUFFER];
 	ssize_t rds = physical_path(ppwd, PHYSICAL_PATH_BUFFER, pwd);

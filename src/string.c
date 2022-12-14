@@ -100,9 +100,8 @@ struct string *substr(struct string *str, size_t from, size_t to)
 {
 	size_t str_s = str->cnt->size;
 
-	if (from >= str_s || to <= from) {
+	if (from >= str_s || to <= from)
 		return NULL;
-	}
 
 	to = to > str_s ? str_s : to;
 	char *sub = malloc(to - from + 1);
@@ -163,8 +162,10 @@ struct vector *split_str(struct string *str, char sep)
 	size_t k = 0, beg = 0;
 	size_t str_s = size_str(str);
 
-	struct vector *svec = make_vector(sizeof(struct string),
-					  (void (*)(void *))destruct_string, (void (*)(void *, void *))copy_str);
+	struct vector * svec = make_vector(
+			sizeof(struct string), 
+			(void (*)(void*)) destruct_string, 
+			(void (*)(void*, void*)) copy_str);
 
 	for (; k < str_s; k++) {
 
@@ -181,7 +182,7 @@ struct vector *split_str(struct string *str, char sep)
 			}
 
 
-
+			free_string(sub);
 			beg = k + 1;
 		}
 	}
