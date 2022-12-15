@@ -65,8 +65,14 @@ int builtin_cd_kind(int out, int err, struct string * pwd, struct string * path,
 		char * cnorm = c_str(norm),
 		     * cpwd  = c_str(pwd);	
 
-		setenv("OLDPWD", cpwd, 1);
-		setenv("PWD", cnorm, 1);
+		status = chdir(cnorm);
+
+		if(!status) {
+
+			setenv("OLDPWD", cpwd, 1);
+			setenv("PWD", cnorm, 1);	
+		
+		}
 
 		free(cnorm);
 		free(cpwd);

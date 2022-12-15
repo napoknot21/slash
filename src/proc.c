@@ -40,7 +40,7 @@ char ** exec_format(int argc, char ** argv)
 
 int built_out(int in, int out, int err, int argc, char ** argv)
 {
-	if(argc < 0)
+	if(argc <= 0)
 		return 1;
 
 	char ** exargv = exec_format(argc, argv);
