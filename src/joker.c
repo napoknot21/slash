@@ -475,9 +475,9 @@ static void add_path(struct joker_token *jt, struct vector *result,
 
 static int search(struct string *path, struct vector *entries,
 		  struct vector *result, struct vector *jtokens,
-		  struct joker_token *jt, size_t i, int incr)
+		  struct joker_token *jt, size_t i, int incr, int link)
 {
-	struct stat st;
+	struct stat st, lst;
 	char *c_path = NULL;
 	char *name = NULL;
 	for (size_t j = 0; j < entries->size; j++) {
@@ -489,7 +489,7 @@ static int search(struct string *path, struct vector *entries,
 		append_cstr(path, name);
 
 		c_path = c_str(path);
-		if (stat(c_path, &st) == -1) {
+		if (stat(c_path, &st) == -1 || lstat(c_path, &lst)) {
 			goto error;
 		}
 		if ((jtokens->size == i + (size_t)incr) &&
@@ -501,7 +501,8 @@ static int search(struct string *path, struct vector *entries,
 		}
 		free(c_path);
 		c_path = NULL;
-		if (S_ISDIR(st.st_mode) && jt->is_dir) {
+		if (S_ISDIR(st.st_mode) && jt->is_dir &&
+		    (link || (!link && !S_ISLNK(lst.st_mode)))) {
 			push_back_str(path, '/');
 			compute_pattern(jtokens, result, path,
 					(i + (size_t)incr));
@@ -521,7 +522,8 @@ error:
 	return -1;
 }
 
-static int is_hidden(char *name) {
+static int is_hidden(char *name)
+{
 	return name[0] == '.';
 }
 
@@ -558,19 +560,22 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 		return 0;
 	}
 	struct joker_token *jt = at(jtokens, i);
+	size_t n_path = 0;
 
 	if (jt->type == PATH) {
 		append(path, jt->path);
+		n_path = size_str(jt->path);
 		i++;
 		if (jtokens->size <= i) {
 			c_path = c_str(path);
 			if (stat(c_path, &st) == 0)
 				add_path(jt, result, path); // check exist
 			free(c_path);
-			truncate_str(path, size_str(jt->path));
+			truncate_str(path, n_path);
 			return 0;
 		}
 		push_back_str(path, '/');
+		n_path++;
 		jt = at(jtokens, i);
 	}
 
@@ -580,6 +585,7 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			struct joker_token *tmp = make_star(jt->is_dir);
 			push_back(jtokens, tmp);
 			free_jt(tmp);
+			jt->is_dir = 1;
 		}
 		jt = at(jtokens, i);
 		is_dstar = 1;
@@ -608,13 +614,14 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 	closedir(dir);
 	dir = NULL;
 	if (entries->size != 0) // Recursive call
-		search(path, entries, result, jtokens, jt, i, 1);
+		search(path, entries, result, jtokens, jt, i, 1, 1);
 	if (is_dstar && dstar->size != 0) { // Recursive call
 		jt = at(jtokens, i - 1);
-		search(path, dstar, result, jtokens, jt, i - 1, 0);
+		search(path, dstar, result, jtokens, jt, i - 1, 0, 0);
 	}
 	free_vector(entries);
 	free_vector(dstar);
+	truncate_str(path, n_path);
 	return 0;
 
 error:
@@ -627,7 +634,7 @@ error:
 		closedir(dir);
 	if (automaton != NULL)
 		free_automaton(automaton);
-
+	truncate_str(path, n_path);
 	return -1;
 }
 
