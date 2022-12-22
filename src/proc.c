@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <errno.h>
+#include <limits.h>
 
 void extern_handler(int sig)
 {
@@ -76,8 +77,7 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 		int status = execvp(argv[0], exargv);
 
 		if(status == -1) {
-
-			dprintf(err, "%s: erreur à l'éxecution!\n", argv[0]);
+			perror(argv[0]);
 			free(exargv);
 			exit(of_errno());
 

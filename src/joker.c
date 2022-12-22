@@ -59,10 +59,18 @@ static struct joker_token *make_jt(struct string *value,
 	if (new == NULL)
 		return NULL;
 	new->type = type;
-	new->path = malloc(sizeof(struct string));
-	copy_str(value, new->path);
-	new->subtokens = malloc(sizeof(struct vector));
-	copy_vec(subtokens, new->subtokens);
+	if (value != NULL) {
+		new->path = malloc(sizeof(struct string));
+		copy_str(value, new->path);
+	} else {
+		new->path = NULL;
+	}
+	if (subtokens != NULL) {
+		new->subtokens = malloc(sizeof(struct vector));
+		copy_vec(subtokens, new->subtokens);
+	} else {
+		new->subtokens = NULL;
+	}
 	new->is_dir = is_dir;
 	return new;
 }
@@ -70,17 +78,26 @@ static struct joker_token *make_jt(struct string *value,
 static void destruct_jt(void *jt)
 {
 	struct joker_token *del = (struct joker_token *)jt;
-	free_string(del->path);
+	if (del->path != NULL)
+		free_string(del->path);
 	if (del->subtokens != NULL)
 		free_vector(del->subtokens);
 }
 
 static void copy_jt(struct joker_token *jt, struct joker_token *cp)
 {
-	cp->path = malloc(sizeof(struct string));
-	copy_str(jt->path, cp->path);
-	cp->subtokens = malloc(sizeof(struct vector));
-	copy_vec(jt->subtokens, cp->subtokens);
+	if (jt->path != NULL) {
+		cp->path = malloc(sizeof(struct string));
+		copy_str(jt->path, cp->path);
+	} else {
+		cp->path = NULL;
+	}
+	if (jt->subtokens != NULL) {
+		cp->subtokens = malloc(sizeof(struct vector));
+		copy_vec(jt->subtokens, cp->subtokens);
+	} else {
+		cp->subtokens = NULL;
+	}
 	cp->type = jt->type;
 	cp->is_dir = jt->is_dir;
 }
@@ -387,8 +404,16 @@ static struct vector *parse(struct vector *tokens)
 	struct vector *result =
 		make_vector(sizeof(struct joker_token), destruct_jt,
 			    (void (*)(void *, void *))copy_jt);
-	for (size_t i = 0; i < tokens->size && error == 0; i++) {
-		struct token *tok = at(tokens, i);
+	size_t i = 0;
+	struct token *tok = at(tokens, 0);
+	if (tok->type_spec == SLASH) {
+		i++;
+		struct joker_token *jt = make_jt(NULL, NULL, SLASH, 1);
+		push_back(result, jt);
+		free_jt(jt);
+	}
+	for (; i < tokens->size && error == 0; i++) {
+		tok = at(tokens, i);
 		struct joker_token *tmp =
 			compute_joker_tok(tok, buf, last, subtoks);
 		if (tmp != NULL) {
@@ -496,8 +521,12 @@ error:
 	return -1;
 }
 
+static int is_hidden(char *name) {
+	return name[0] == '.';
+}
+
 static void analyze_dir(DIR *dir, struct automaton *a, struct vector *entries,
-			struct vector *dstar)
+			struct vector *dstar, int is_dstar)
 {
 	struct dirent *entry;
 	while ((entry = readdir(dir)) != NULL) {
@@ -506,7 +535,8 @@ static void analyze_dir(DIR *dir, struct automaton *a, struct vector *entries,
 			continue;
 		}
 		struct string *s_name = make_string(entry->d_name);
-		push_back(dstar, s_name);
+		if (is_dstar && !is_hidden(entry->d_name))
+			push_back(dstar, s_name);
 		if (check_regex(a, entry->d_name)) {
 			push_back(entries, s_name);
 		}
@@ -572,15 +602,17 @@ static int compute_pattern(struct vector *jtokens, struct vector *result,
 			    (void (*)(void *))destruct_string,
 			    (void (*)(void *, void *))copy_str);
 	automaton = make_automaton(jt->subtokens);
-	analyze_dir(dir, automaton, entries, dstar);
+	analyze_dir(dir, automaton, entries, dstar, is_dstar);
 	free_automaton(automaton);
 	automaton = NULL;
 	closedir(dir);
 	dir = NULL;
 	if (entries->size != 0) // Recursive call
 		search(path, entries, result, jtokens, jt, i, 1);
-	if (is_dstar && dstar->size != 0) // Recursive call
-		search(path, entries, result, jtokens, jt, i - 1, 0);
+	if (is_dstar && dstar->size != 0) { // Recursive call
+		jt = at(jtokens, i - 1);
+		search(path, dstar, result, jtokens, jt, i - 1, 0);
+	}
 	free_vector(entries);
 	free_vector(dstar);
 	return 0;
@@ -604,7 +636,13 @@ static int interpret(struct vector *jtokens, struct vector *result)
 	struct string *path = make_string("");
 	if (path == NULL)
 		return -1;
-	int ret = compute_pattern(jtokens, result, path, 0);
+	struct joker_token *jt = at(jtokens, 0);
+	size_t i = 0;
+	if (jt->type == SLASH) {
+		i++;
+		push_back_str(path, '/');
+	}
+	int ret = compute_pattern(jtokens, result, path, i);
 	if (path != NULL)
 		free_string(path);
 	return ret;
