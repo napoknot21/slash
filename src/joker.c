@@ -219,7 +219,7 @@ static struct vector *build_tokens(char *arg)
 		}
 		if (is_none) {
 			struct token *tmp =
-				compute_tok(arg, start, i - 1, SPEC_NONE);
+				compute_tok(arg, start, i, SPEC_NONE);
 			push_back(tokens, tmp);
 			free(tmp);
 			start = i;
