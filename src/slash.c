@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define C_RED "\001\033[31m\002"
 #define C_GREEN "\001\033[32m\002"
@@ -18,8 +19,35 @@
 #define C_BLUE "\001\033[34m\002"
 #define PROMPT_SIZE 30
 #define EXIT_NAME "exit"
+#define VERSION "0.2"
 
-static char *compute_prompt();
+static void print_welcome() {
+	int size = 80;
+	char buf[size];
+	write(STDIN_FILENO, "\n", 1);
+	memset(buf, '*', size - 1);
+	buf[size -1] = '\n';
+	write (STDIN_FILENO, buf, size);
+	char line[30];
+	sprintf(line ,"Welcome into Slash %s", VERSION);
+	int len = strlen(line);
+	int n = (size - 3 - len) / 2;
+	char tmp[size];
+	memset(tmp, ' ', size);
+	tmp[0] = '*';
+	memcpy(tmp + n, line, len);
+	tmp [size - 2] = '*';
+	tmp [size - 1] = '\n';
+	write(STDERR_FILENO, tmp, size);
+	write (STDIN_FILENO, buf, size);
+	write(STDIN_FILENO, "\n", 1);
+}
+
+
+static void print_bye() {
+	dprintf(STDIN_FILENO ,"exiting... \n\n");
+}
+
 static char *compute_prompt()
 {
 	int color_len = strlen(C_RED) + 1;
@@ -32,7 +60,7 @@ static char *compute_prompt()
 	char *pwd = getenv("PWD");
 	char err[4];
 	if (slasherrno == S_ESIG)
-		memcpy(err,"SIG",4);
+		memcpy(err, "SIG", 4);
 	else
 		sprintf(err, "%d", slasherrno);
 	size_t pwdlen = strlen(pwd);
@@ -51,6 +79,7 @@ static char *compute_prompt()
 
 int main()
 {
+	print_welcome();
 	char *line;
 	rl_outstream = stderr;
 	char *prompt = compute_prompt();
@@ -64,18 +93,20 @@ int main()
 			slasherrno = S_EFAIL;
 			break;
 		}
-		parse(tokens);
-		if (tokens->size != 0 && is_exit_call) {
-			free_vector(tokens);
-			break;
-		}
-
+		struct vector *line = parse(tokens);
 		free_vector(tokens);
+		if (line) {
+			exec(line, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+			free_vector(line);
+		}
+		if (is_exit_call)
+			break;
+
 		prompt = compute_prompt();
 	}
 	if (prompt != NULL)
 		free(prompt);
 	rl_clear_history();
-	dprintf(1, "Bye !\n\n");
+	print_bye();
 	return slasherrno;
 }

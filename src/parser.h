@@ -9,6 +9,7 @@
  * @param tokens The tokens vector from the lexer
  * @return 1 if an error occured and slasherrno is set, 0 otherwise
  */
-int parse(struct vector *tokens); // TODO
+struct vector *parse(struct vector *tokens); // TODO
+int exec(struct vector *line, int fdin, int fdout, int fderr);
 
 #endif

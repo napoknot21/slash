@@ -9,6 +9,8 @@
 #define S_ESKILL 128
 #define S_ESIG 255
 #define S_EOBOUND 255
+#define S_EUNKNOWN 1
+#define S_ELISTENING 256
 
 extern short slasherrno;
 extern short is_exit_call;
