@@ -24,6 +24,7 @@ void copy_str(const struct string *, struct string *);
 
 void push_back_str(struct string *, char);
 void pop_back_str(struct string *);
+void pop_back_n_str(struct string *str, size_t n);
 void append(struct string *, struct string *);
 void append_cstr(struct string *, const char *);
 

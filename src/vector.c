@@ -3,7 +3,7 @@
 
 struct vector *make_vector(size_t elem_s, void (*free)(void *), void (*copy)(void *, void *))
 {
-	struct vector *vec = malloc(sizeof(struct vector));	
+	struct vector *vec = malloc(sizeof(struct vector));
 
 	vec->capacity = VECTOR_DEFAULT_CAPACITY;
 	vec->size = 0;
@@ -12,7 +12,7 @@ struct vector *make_vector(size_t elem_s, void (*free)(void *), void (*copy)(voi
 	vec->data = malloc(vec->elem_s * vec->capacity);
 	vec->free = free;
 	vec->copy = copy;
-	
+
 	return vec;
 }
 
@@ -20,17 +20,17 @@ void copy_vec(const struct vector * vec, struct vector * cp)
 {
 	memset(cp, 0x0, sizeof(struct vector));
 
-	cp->capacity = vec->capacity;	
+	cp->capacity = vec->capacity;
 	cp->size = 0;
-	cp->elem_s = vec->elem_s;	
+	cp->elem_s = vec->elem_s;
 
 	cp->free = vec->free;
 	cp->copy = vec->copy;
-	
-	cp->data = malloc(cp->elem_s * cp->capacity);	
+
+	cp->data = malloc(cp->elem_s * cp->capacity);
 
 	for(size_t k = 0; k < vec->size; k++) {
-	
+
 		push_back(cp, at(vec, k));
 
 	}
@@ -41,18 +41,18 @@ void free_data(struct vector *vec)
 	if (!vec->free) return;
 
 	for (size_t k = 0; k < vec->size; k++) {
-		
+
 		void * el = (void*)((char*) vec->data + k * vec->elem_s);
 		if(!el) continue;
 
-		vec->free(el);	
+		vec->free(el);
 	}
 }
 
 void destruct_vector(struct vector *vec)
 {
 	free_data(vec);
-	free(vec->data);	
+	free(vec->data);
 }
 
 void free_vector(struct vector *vec)
@@ -67,11 +67,11 @@ int push_back(struct vector *vec, void *data)
 		reserve(vec, vec->capacity * 2);
 		if (!vec->data)
 			return 1;
-	}	
+	}
 
-	if(vec->copy)	
-		vec->copy(data, (void*)((char*) vec->data + vec->size * vec->elem_s));	
-	else			
+	if(vec->copy)
+		vec->copy(data, (void*)((char*) vec->data + vec->size * vec->elem_s));
+	else
 		memmove((void*)((char*) vec->data + vec->size * vec->elem_s), data, vec->elem_s);
 
 	vec->size++;
@@ -79,18 +79,42 @@ int push_back(struct vector *vec, void *data)
 	return 0;
 }
 
+int append_vec(struct vector *u, struct vector *v)
+{
+	for (size_t i = 0; i < v->size; i++) {
+		if (push_back(u, at(v, i)) != 0)
+			return 1;
+	}
+	return 0;
+}
+
+
 void pop_back(struct vector *vec)
 {
 	if (vec->size > 0) {
 
 		void *e = (void*)((char*) vec->data + --vec->size * vec->elem_s);
-		
-		if(vec->free) 
+
+		if(vec->free)
 			vec->free(e);
 		else
-			memset(e, 0x0, vec->elem_s);	
-	
+			memset(e, 0x0, vec->elem_s);
+
 	}
+}
+
+void pop_back_n(struct vector *vec, size_t n) {
+	vtrunc(vec, vec->size - n, vec->size);
+}
+
+void *peek_pop(struct vector *vec, void *dst) {
+	if (vec->size <= 0) {
+		return NULL;
+	}
+	void *e = (void*)((char*) vec->data + --vec->size * vec->elem_s);
+	memcpy(dst, e, vec->elem_s);
+	memset(e, 0x0, vec->elem_s);
+	return dst;
 }
 
 void vtrunc(struct vector *vec, size_t from, size_t to)
@@ -132,16 +156,16 @@ void reserve(struct vector *vec, size_t ncap)
 		return;
 
 	vec->capacity = ncap;
-	void * tmp = realloc(vec->data, vec->elem_s * vec->capacity);	
+	void * tmp = realloc(vec->data, vec->elem_s * vec->capacity);
 
-	if (!tmp) {	
+	if (!tmp) {
 		free_data(vec);
 		free(vec->data);
 		vec->data = NULL;
 
 		return;
 	}
-	
+
 	vec->data = tmp;
 }
 

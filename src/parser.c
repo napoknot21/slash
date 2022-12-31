@@ -1,7 +1,7 @@
 #include "parser.h"
 
 #include "internals.h"
-#include "joker.h"
+#include "wildcard.h"
 #include "proc.h"
 #include "slasherrno.h"
 #include "string.h"
@@ -53,14 +53,14 @@ static void free_argv(char **argv, size_t size)
 
 static int compute_jokers(struct token *tok, struct vector *line)
 {
-	struct vector *jokers = expand_jokers(tok);
-	if (jokers == NULL)
+	struct vector *wildcards = expand_wildcards(tok);
+	if (wildcards == NULL)
 		return push_back(line, tok);
-	for (size_t i = 0; i < jokers->size; i++) {
-		struct token *tok = at(jokers, i);
+	for (size_t i = 0; i < wildcards->size; i++) {
+		struct token *tok = at(wildcards, i);
 		push_back(line, tok);
 	}
-	free_vector(jokers);
+	free_vector(wildcards);
 	return 0;
 }
 
@@ -81,30 +81,6 @@ static int compute_cmd(struct token *tok, struct vector *line, int iscmd)
 	free(name);
 	return ret;
 }
-
-/*static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
-			    int *fderr)
-{
-	//switch(tok->type_spec) { //Generer le fd selon STDIN, STDOUT, STDERR
-	//(PAS DE PIPE) default: return 1;
-	//}
-	perror("redirect");
-	return 0;
-}*/
-
-/*static int compute_pipe(token *tok, vector *line, int *fdin, int *pout,
-			int *iscmd)
-{
-	// Changer valeur fdin, pout (open pipe)
-	perror("pipe");
-	return 0;
-}*/
-
-/*static int compute_operator(token *tok, vector *line, int *iscmd)
-{
-	perror("operator");
-	return 0;
-}*/
 
 static int compute_args(struct token *tok, struct vector *line)
 {
@@ -158,37 +134,6 @@ int exec(struct vector *line, int fdin, int fdout, int fderr)
 	slasherrno = ret;
 	return ret;
 }
-
-/*
-Seules conditions pour exec sont PIPE et EOL (end of line)
-Pour redirect changer in out err en concordance
-exec lancera la commande interne/externe avec les bonnes valeurs
-
-pseudo code
-fdin = STDIN_FILENO
-fdout = STDOUT_FILENO
-fderr = STDERR_FILENO
-pout = -1
-tant que pas PIPE ou \n ou OPERATOR
-    si cmd -> computecmd
-    si redirect
-	si STDIN -> fdin = file
-	si STDOUT* -> fdout = file
-	si STDERR* -> fderr = file
-	si PIPE -> fdout = pipe[1]; exec = 1 (bancal) is pipe
-    si arg -> computearg =
-	si joker -> push_back all find
-	sinon push_back arg
-
-exec() -> function
-    switch(line[0]->type)
-	case INTERNAL -> map -> cmd
-	case EXTERNAL -> fork -> blah blah (charly)
-    si ispipe
-	fdin = pout;
-	pout = -1
-	is pipe = false
-*/
 
 struct vector *parse(struct vector *tokens)
 {

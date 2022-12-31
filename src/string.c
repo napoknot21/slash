@@ -50,6 +50,10 @@ void pop_back_str(struct string *str)
 	pop_back(str->cnt);
 }
 
+void pop_back_n_str(struct string *str, size_t n) {
+	pop_back_n(str->cnt, n);
+}
+
 void append(struct string *dst, struct string *src)
 {
 	size_t src_s = src->cnt->size;
@@ -163,17 +167,17 @@ struct vector *split_str(struct string *str, char sep)
 	size_t str_s = size_str(str);
 
 	struct vector * svec = make_vector(
-			sizeof(struct string), 
-			(void (*)(void*)) destruct_string, 
-			(void (*)(void*, void*)) copy_str);	
+			sizeof(struct string),
+			(void (*)(void*)) destruct_string,
+			(void (*)(void*, void*)) copy_str);
 
 	for (; k < str_s; k++) {
 
-		char curr = *at_str(str, k);	
+		char curr = *at_str(str, k);
 
 		if (curr == sep || k + 1 == str_s) {
 
-			struct string *sub = substr(str, beg, k);	
+			struct string *sub = substr(str, beg, k);
 
 			if(!sub) {
 				beg = k + 1;
@@ -181,12 +185,12 @@ struct vector *split_str(struct string *str, char sep)
 			}
 
 			if (size_str(sub))
-				push_back(svec, sub);	
+				push_back(svec, sub);
 
 			free_string(sub);
 			beg = k + 1;
 		}
-	}	
+	}
 
 	return svec;
 }

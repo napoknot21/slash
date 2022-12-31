@@ -190,7 +190,6 @@ struct automaton *make_automaton(struct vector *regex)
 		return NULL;
 	a->states = make_vector(sizeof(struct state), destruct_state, NULL);
 	struct state *tmp = make_state(0, 1);
-	struct state *next = NULL;
 	push_back(a->states, tmp);
 	free(tmp);
 	int current = 0;
