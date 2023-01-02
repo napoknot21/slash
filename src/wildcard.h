@@ -8,7 +8,7 @@
  * Expands the jokers according to the given regex in the token data.
  *
  * @param tok The token which store the regex.
-*/
+ */
 struct vector *expand_wildcards(struct token *tok);
 
 #endif

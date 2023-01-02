@@ -55,13 +55,31 @@ enum token_type_spec {
 	STAR,
 	SOME,
 	DSTAR,
+	QUESTION_MARK,
+	EXCLAMATION_MARK,
 
 	HYPHEN,
 	LBRACKET,
 	RBRACKET,
+	LBRACE,
+	RBRACE,
 	SLASH,
 	PATH,
-	REGEX
+	REGEX,
+
+	IF,
+	THEN,
+	ELSE,
+	DO,
+	DONE,
+	WHILE,
+	FOR,
+	IN,
+	QUOTE,
+	DOT,
+	DOLLARD,
+	LCURVE,
+	RCURVE
 
 };
 

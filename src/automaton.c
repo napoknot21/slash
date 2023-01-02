@@ -144,6 +144,7 @@ static int check_link(struct link *ln, char *c)
 		return check_none(ln->keys, c);
 	case STAR:
 		return 1;
+	case QUESTION_MARK: return strlen(c) > 0 ? 1 : 0;
 	default:
 		return 0;
 	}

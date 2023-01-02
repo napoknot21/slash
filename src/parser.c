@@ -1,23 +1,18 @@
 #include "parser.h"
 
 #include "internals.h"
-#include "wildcard.h"
 #include "proc.h"
 #include "slasherrno.h"
 #include "string.h"
 #include "token.h"
 #include "vector.h"
+#include "wildcard.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 static int compute_cmd(struct token *tok, struct vector *line, int iscmd);
-// static int compute_redirect(token *tok, token *file, int *fdin, int *fdout,
-//			    int *fderr);
-// static int compute_pipe(token *tok, vector *line, int *fdin, int *pout,
-//			int *iscmd);
-// static int compute_operator(token *tok, vector *line, int *iscmd);
 static int compute_args(struct token *tok, struct vector *line);
 static int exec_internal(struct vector *line, int fdout, int fderr);
 static char **convertstr(struct vector *line);

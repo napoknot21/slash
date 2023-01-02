@@ -86,12 +86,10 @@ static struct vector *build_tokens(char *arg);
 static struct vector *lex(struct token *t);
 /**
  * @brief Compute the wildcard_token type.
- * @param buf The wildcard_token buffer.
  * @param subtokens The wildcard_token subtokens.
  * @return the type of the wildcard_token.
  */
-static enum token_type_spec compute_jt_type(struct string *buf,
-					    struct vector *subtokens);
+static enum token_type_spec compute_jt_type(struct vector *subtokens);
 
 /**
  * @brief Compute the wildcard_token. If the last joker was a PATH, then the
@@ -315,6 +313,8 @@ static enum token_type_spec compute_token_type(char c)
 		return RBRACKET;
 	case '-':
 		return HYPHEN;
+	case '?':
+		return QUESTION_MARK;
 	default:
 		return SPEC_NONE;
 	}
@@ -353,6 +353,7 @@ static struct vector *build_tokens(char *arg)
 	for (size_t i = 0; i < len; i++) {
 		enum token_type_spec spec = compute_token_type(arg[i]);
 		int c = 0;
+		int change_bracket = 0;
 		switch (spec) {
 		case HYPHEN:
 			if (spec == HYPHEN && !has_bracket) {
@@ -364,7 +365,7 @@ static struct vector *build_tokens(char *arg)
 		// fall through
 		case SPEC_NONE:
 			is_none = 1;
-			c = 1;
+			c = has_bracket ? 0 : 1;
 			break;
 		case RBRACKET:
 			c = 0;
@@ -372,7 +373,7 @@ static struct vector *build_tokens(char *arg)
 			break;
 		case LBRACKET:
 			c = 0;
-			has_bracket = 1;
+			change_bracket = 1;
 			break;
 		default:
 			c = 0;
@@ -384,13 +385,14 @@ static struct vector *build_tokens(char *arg)
 			free(last);
 			last = NULL;
 		}
-		if (is_none) {
+		if (is_none && !has_bracket) {
 			struct token *tmp =
 				compute_tok(arg, start, i, SPEC_NONE);
 			push_back(tokens, tmp);
 			free(tmp);
 			start = i;
 		}
+		has_bracket = change_bracket ? !has_bracket : has_bracket;
 		last = compute_tok(arg, start, i, spec);
 		start = i + 1;
 		is_none = 0;
@@ -452,14 +454,21 @@ error_null:
 	return NULL;
 }
 
-static enum token_type_spec compute_jt_type(struct string *buf,
-					    struct vector *subtokens)
+static enum token_type_spec compute_jt_type(struct vector *subtokens)
 {
-	if (subtokens->size != 0 &&
-	    ((struct token *)at(subtokens, 0))->type_spec == DSTAR)
-		return DSTAR;
-	else
-		return has_wildcards(buf) ? REGEX : PATH;
+	for (size_t i = 0; i < subtokens->size; i++) {
+		struct token *t = at(subtokens, i);
+		switch (t->type_spec) {
+		case DSTAR:
+			return DSTAR;
+		case STAR:
+		case SOME:
+			return REGEX;
+		default:
+			break;
+		}
+	}
+	return PATH;
 }
 
 static struct wildcard_token *add_token(struct string *buf,
@@ -467,7 +476,7 @@ static struct wildcard_token *add_token(struct string *buf,
 					struct vector *subtokens)
 {
 	struct wildcard_token *wt = NULL;
-	enum token_type_spec type = compute_jt_type(buf, subtokens);
+	enum token_type_spec type = compute_jt_type(subtokens);
 
 	if (last != NULL && subtokens->size == 1 && last->type == PATH &&
 	    type == PATH) {
@@ -490,17 +499,36 @@ static struct wildcard_token *add_token(struct string *buf,
 static void compute_spec_none(struct token *tok, struct string *buffer,
 			      struct vector *subtokens)
 {
-	has_hyphen = 0;
 	if (has_bracket) {
 		tok->type_spec = SPEC_NONE;
-		struct token *some = at(subtokens, subtokens->size - 1);
-		if (has_hyphen) {
-			char *tmp =
-				at_str(some->data, size_str(some->data) - 1);
-			*tmp = *at_str(tok->data, 0);
+		if (!has_hyphen) {
+			append(buffer, tok->data);
+			append(buffer, tok->data);
 		} else {
-			append(some->data, tok->data);
-			append(some->data, tok->data);
+			if (size_str(buffer) != 0) {
+				pop_back_str(buffer);
+				append(buffer, tok->data);
+			}
+		}
+		has_hyphen = 0;
+		return;
+	}
+	append(buffer, tok->data);
+	push_back(subtokens, tok);
+}
+
+static void compute_star(struct token *tok, struct string *buffer,
+			 struct vector *subtokens)
+{
+	if (has_bracket) {
+		if (!has_hyphen) {
+			append(buffer, tok->data);
+			append(buffer, tok->data);
+		} else {
+			if (size_str(buffer) != 0) {
+				pop_back_str(buffer);
+				append(buffer, tok->data);
+			}
 		}
 		return;
 	}
@@ -519,30 +547,26 @@ static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 	case SPEC_NONE:
 		compute_spec_none(tok, buffer, subtokens);
 		break;
+	case QUESTION_MARK:
 	case DSTAR:
 	case STAR:
-		if (has_bracket) {
-			tok->type_spec = SPEC_NONE;
-			break;
-		}
-		append(buffer, tok->data);
-		push_back(subtokens, tok);
+		compute_star(tok, buffer, subtokens);
 		break;
 
 	case HYPHEN:
 		has_hyphen = 1;
-		append(buffer, tok->data);
 		break;
 
 	case LBRACKET:
 		has_bracket = 1;
-		struct token *some = make_token("", JOKER, SOME);
-		append(buffer, tok->data);
-		push_back(subtokens, some);
-		free_token(some);
 		break;
 	case RBRACKET:
 		has_bracket = 0;
+		char *tmp = c_str(buffer);
+		struct token *some = make_token(tmp, JOKER, SOME);
+		push_back(subtokens, some);
+		free_token(some);
+		free(tmp);
 		break;
 	default:
 		error = EUNKNOWN;
@@ -557,7 +581,7 @@ static void add_last_token(struct vector *result, struct string *buf,
 	if (size_str(buf) == 0) {
 		return;
 	}
-	enum token_type_spec type = compute_jt_type(buf, subtoks);
+	enum token_type_spec type = compute_jt_type(subtoks);
 	struct wildcard_token *tmp = make_wt(buf, subtoks, type, 0);
 	push_back(result, tmp);
 	free_wt(tmp);
@@ -567,6 +591,9 @@ static void add_last_token(struct vector *result, struct string *buf,
 
 static struct vector *parse(struct vector *tokens)
 {
+	if (tokens->size == 0) {
+		return NULL;
+	}
 	struct vector *subtoks = make_vector(
 		sizeof(struct token), (void (*)(void *))destruct_token,
 		(void (*)(void *, void *))copy_token);
@@ -615,7 +642,11 @@ static struct vector *expand_bracket(struct vector *subtokens)
 static int has_wildcards(struct string *s)
 {
 	for (size_t i = 0; i < s->cnt->size; i++) {
-		if (compute_token_type(*at_str(s, i)) != SPEC_NONE) {
+		switch (compute_token_type(*at_str(s, i))) {
+		case SPEC_NONE:
+		case HYPHEN:
+			break;
+		default:
 			return 1;
 		}
 	}
@@ -788,6 +819,11 @@ error:
 
 static struct vector *interpret(struct vector *wtokens)
 {
+	has_bracket = 0;
+	has_hyphen = 0;
+	if (wtokens->size == 0) {
+		return NULL;
+	}
 	DIR *dir = NULL;
 	struct vector *entries = NULL;
 	struct vector *queue = NULL;
@@ -874,7 +910,10 @@ struct vector *expand_wildcards(struct token *tok)
 		return NULL;
 	struct vector *result = interpret(p);
 	free_vector(p);
-	if (result == NULL || result->size == 0) {
+	if (result == NULL) {
+		return NULL;
+	}
+	if (result->size == 0) {
 		free_vector(result);
 		return NULL;
 	}

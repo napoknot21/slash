@@ -11,32 +11,50 @@
  * @param last Represent the last computed token
  */
 static int isnextcmd(struct token *last);
+
 /**
  * Compute the token type specification from the data.
  * @param data The data that will be computed
  * @param len The data length
  */
-static enum token_type_spec computeredirect(const char *data, size_t len);
+static enum token_type_spec compute_spec(const char *data, size_t len);
+
 /**
  * Compute the token type from the type specification.
  * @param type The token type specification
  */
 static enum token_type computetype(enum token_type_spec type);
+
 /**
  * Compute the token type specification from the data.
  * @param data The data that will be computed
  */
-static enum token_type_spec computedirectone(const char *data);
+static enum token_type_spec compute_spec_1(const char *data);
+
 /**
  * Compute the token type specification from the data.
  * @param data The data that will be computed
  */
-static enum token_type_spec computedirecttwo(const char *data);
+static enum token_type_spec compute_spec_2(const char *data);
+
 /**
  * Compute the token type specification from the data.
  * @param data The data that will be computed
  */
-static enum token_type_spec computedirectthree(const char *data);
+static enum token_type_spec compute_spec_3(const char *data);
+
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+ */
+static enum token_type_spec compute_spec_4(const char *data);
+
+/**
+ * Compute the token type specification from the data.
+ * @param data The data that will be computed
+ */
+static enum token_type_spec compute_spec_5(const char *data);
+
 /**
  * Build the right token according to the given string and
  * the last computed token.
@@ -44,6 +62,7 @@ static enum token_type_spec computedirectthree(const char *data);
  * @param last The last computed token
  */
 static struct token *buildtoken(const char *str, struct token *last);
+
 static char *cpy(char *src);
 
 static int isnextcmd(struct token *last)
@@ -52,7 +71,7 @@ static int isnextcmd(struct token *last)
 	       last->type == OPERATOR;
 }
 
-static enum token_type_spec computedirectone(const char *data)
+static enum token_type_spec compute_spec_1(const char *data)
 {
 	switch (data[0]) {
 	case '<':
@@ -63,12 +82,26 @@ static enum token_type_spec computedirectone(const char *data)
 		return PIPE;
 	case ';':
 		return SEMICOLON;
+	case '!':
+		return EXCLAMATION_MARK;
+	case '"':
+		return QUOTE;
+	case '[':
+		return LBRACKET;
+	case ']':
+		return RBRACKET;
+	case '(':
+		return LCURVE;
+	case ')':
+		return RCURVE;
+	case '$':
+		return DOLLARD;
 	default:
 		return SPEC_NONE;
 	}
 }
 
-static enum token_type_spec computedirecttwo(const char *data)
+static enum token_type_spec compute_spec_2(const char *data)
 {
 	switch (data[0]) {
 	case '>': {
@@ -87,17 +120,28 @@ static enum token_type_spec computedirecttwo(const char *data)
 		return (data[1] == '&') ? AND : SPEC_NONE;
 	case '|':
 		return (data[1] == '|') ? OR : SPEC_NONE;
+	case 'd':
+		return (data[1] == 'o') ? DO : SPEC_NONE;
+	case 'i':
+		switch (data[1]) {
+		case 'f':
+			return IF;
+		case 'n':
+			return IN;
+		default:
+			return SPEC_NONE;
+		}
 	default:
 		return SPEC_NONE;
 	}
 }
 
-static enum token_type_spec computedirectthree(const char *data)
+static enum token_type_spec check_redirect(const char *data)
 {
-	if (data[0] != '2' || data[1] != '>') {
+	if (data[0] != '>') {
 		return SPEC_NONE;
 	}
-	switch (data[2]) {
+	switch (data[1]) {
 	case '|':
 		return STDERR_TRUNC;
 	case '>':
@@ -107,15 +151,50 @@ static enum token_type_spec computedirectthree(const char *data)
 	}
 }
 
-static enum token_type_spec computeredirect(const char *data, size_t len)
+static enum token_type_spec compute_spec_3(const char *data)
+{
+	switch (data[0]) {
+	case '2':
+		return check_redirect(data + 1);
+	case 'f':
+		return strcmp(data + 1, "or") == 0 ? FOR : SPEC_NONE;
+	default:
+		return SPEC_NONE;
+	}
+}
+
+static enum token_type_spec compute_spec_4(const char *data)
+{
+	switch (data[0]) {
+	case 't':
+		return strcmp(data + 1, "hen") == 0 ? THEN : SPEC_NONE;
+	case 'e':
+		return strcmp(data + 1, "lse") == 0 ? ELSE : SPEC_NONE;
+	case 'd':
+		return strcmp(data + 1, "one") == 0 ? ELSE : SPEC_NONE;
+	default:
+		return SPEC_NONE;
+	}
+}
+
+static enum token_type_spec compute_spec_5(const char *data)
+{
+	return strcmp(data + 1, "while") == 0 ? WHILE : SPEC_NONE;
+}
+
+static enum token_type_spec compute_spec(const char *data, size_t len)
 {
 	switch (len) {
 	case 1:
-		return computedirectone(data);
+		return compute_spec_1(data);
 	case 2:
-		return computedirecttwo(data);
+		return compute_spec_2(data);
 	case 3:
-		return computedirectthree(data);
+		return compute_spec_3(data);
+	case 4:
+		return compute_spec_4(data);
+	case 5:
+		return compute_spec_5(data);
 	default:
 		return SPEC_NONE;
 	}
@@ -147,7 +226,7 @@ static enum token_type computetype(enum token_type_spec type)
 
 static struct token *buildtoken(const char *str, struct token *last)
 {
-	enum token_type_spec type_spec = computeredirect(str, strlen(str));
+	enum token_type_spec type_spec = compute_spec(str, strlen(str));
 	enum token_type type = computetype(type_spec);
 	if (isnextcmd(last)) {
 		if (type != ARG || type_spec != SPEC_NONE) {
@@ -181,10 +260,9 @@ struct vector *lex(char *line)
 	line = cpy(line);
 	char *delimeters = " ";
 
-	struct vector *tokens = make_vector(
-			sizeof(struct token),
-			(void (*)(void*)) destruct_token,
-			(void (*)(void*, void*)) NULL);
+	struct vector *tokens = make_vector(sizeof(struct token),
+					    (void (*)(void *))destruct_token,
+					    (void (*)(void *, void *))NULL);
 
 	struct token *last = NULL;
 
