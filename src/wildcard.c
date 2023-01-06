@@ -137,11 +137,6 @@ static void add_last_token(struct vector *result, struct string *buf,
  */
 static struct vector *parse(struct vector *tokens);
 /**
- * @brief Expand the bracket for the automaton.
- * @param The content between the brackets.
- */
-static struct vector *expand_bracket(struct vector *subtokens);
-/**
  * @brief Check if a string has wildcard in it
  * @param s The string that will be checked.
  * @return 1 if s contrains some wildcards, 0 otherwise.
@@ -211,6 +206,11 @@ static DIR *opendir_path(struct string *path);
  * @param wtokens The vector of wildcard_tokens
  * @return The pending paths queue
  */
+
+static int finish_path(struct pair *p, struct wildcard_token *wt,
+		       struct vector *result, size_t incr, size_t len,
+		       struct stat st);
+
 static struct vector *search(struct pair *p, struct vector *queue,
 			     struct vector *entries, struct vector *result,
 			     int lnk, size_t incr, struct vector *wtokens);
@@ -301,6 +301,8 @@ static struct wildcard_token *make_star(int is_dir)
 	free_token(tok);
 	return result;
 }
+
+// ======================= LEXER =========================
 
 static enum token_type_spec compute_token_type(char c)
 {
@@ -454,6 +456,8 @@ error_null:
 	return NULL;
 }
 
+//============================== PARSER ================================
+
 static enum token_type_spec compute_jt_type(struct vector *subtokens)
 {
 	for (size_t i = 0; i < subtokens->size; i++) {
@@ -489,8 +493,6 @@ static struct wildcard_token *add_token(struct string *buf,
 			push_back_str(buf, '/');
 			return NULL;
 		}
-		if (has_bracket)
-			subtokens = expand_bracket(subtokens);
 		wt = make_wt(buf, subtokens, type, 1);
 	}
 	return wt;
@@ -633,12 +635,6 @@ static struct vector *parse(struct vector *tokens)
 	return result;
 }
 
-static struct vector *expand_bracket(struct vector *subtokens)
-{ // TODO
-	// struct token *regex = make_token()
-	return subtokens;
-}
-
 static int has_wildcards(struct string *s)
 {
 	for (size_t i = 0; i < s->cnt->size; i++) {
@@ -652,6 +648,8 @@ static int has_wildcards(struct string *s)
 	}
 	return 0;
 }
+
+//============================ INTERPRETER ==============================
 
 static void add_path(struct wildcard_token *wt, struct vector *result,
 		     struct string *path)
@@ -771,6 +769,32 @@ static DIR *opendir_path(struct string *path)
 	return dir;
 }
 
+static int finish_path(struct pair *p, struct wildcard_token *wt,
+		       struct vector *result, size_t incr, size_t len,
+		       struct stat st)
+{
+	if (p->index + incr < len)
+		return 0;
+	if (!wt->is_dir) {
+		char *c_path = c_str(p->path);
+		struct token *tok = make_token(c_path, ARG, SPEC_NONE);
+		push_back(result, tok);
+		free(tok);
+		free(c_path);
+		return 1;
+	} else if (S_ISDIR(st.st_mode)) {
+		push_back_str(p->path, '/');
+		char *c_path = c_str(p->path);
+		struct token *tok = make_token(c_path, ARG, SPEC_NONE);
+		push_back(result, tok);
+		free(tok);
+		free(c_path);
+		pop_back_str(p->path);
+		return 1;
+	}
+	return 0;
+}
+
 static struct vector *search(struct pair *p, struct vector *queue,
 			     struct vector *entries, struct vector *result,
 			     int lnk, size_t incr, struct vector *wtokens)
@@ -789,17 +813,13 @@ static struct vector *search(struct pair *p, struct vector *queue,
 		if (stat(c_path, &st) == -1 || lstat(c_path, &lst) == -1) {
 			goto error;
 		}
-		if ((p->index + (size_t)incr >= wtokens->size) &&
-		    ((!wt->is_dir) || (wt->is_dir && S_ISDIR(st.st_mode)))) {
-			struct token *tok = make_token(c_path, ARG, SPEC_NONE);
-			push_back(result, tok);
-			free(tok);
-			free(c_path);
+		free(c_path);
+		c_path = NULL;
+		if (finish_path(p, wt, result, incr, wtokens->size, st)) {
 			pop_back_n_str(p->path, size_str(name));
 			continue;
 		}
-		free(c_path);
-		c_path = NULL;
+
 		if (S_ISDIR(st.st_mode) && wt->is_dir &&
 		    (lnk || (!lnk && !S_ISLNK(lst.st_mode)))) {
 			push_back_str(p->path, '/');
@@ -893,6 +913,8 @@ error_malloc:
 		free(p);
 	return NULL;
 }
+
+//==================== MAIN FUNCTION =====================
 
 struct vector *expand_wildcards(struct token *tok)
 {
