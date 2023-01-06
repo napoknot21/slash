@@ -8,8 +8,11 @@
 #include "vector.h"
 #include "wildcard.h"
 
+#include <ctype.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static int compute_cmd(struct token *tok, struct vector *line, int iscmd);
@@ -46,11 +49,57 @@ static void free_argv(char **argv, size_t size)
 	free(argv);
 }
 
+static void expand_bracket(struct token *tok, char *s)
+{
+	if (s[1] != '\0' && s[1] == '$') {
+		push_back_str(tok->data, '[');
+		char name[NAME_MAX + 1];
+		size_t len = strlen(s + 2);
+		memcpy(name, s + 2, len - 1);
+		name[len - 1] = '\0';
+		append_cstr(tok->data, getenv(name));
+		push_back_str(tok->data, ']');
+	} else {
+		append_cstr(tok->data, s);
+	}
+}
+
+static void expand_var(struct token *tok)
+{
+	char *s = c_str(tok->data);
+	int size = size_str(tok->data);
+	clear_str(tok->data);
+	char buf[NAME_MAX];
+	int start = 0;
+	int is_var = 0;
+	for (int i = 0; i < size; i++) {
+		if (!isalpha(s[i])) {
+			memcpy(buf, s + start, i - start);
+			buf[i - start] = '\0';
+			if (is_var)
+				append_cstr(tok->data, getenv(buf));
+			else
+				append_cstr(tok->data, buf);
+			is_var = s[i] == '$';
+			start = i + is_var;
+		}
+	}
+	memcpy(buf, s + start, size - start);
+	buf[size - start] = '\0';
+	if (is_var)
+		append_cstr(tok->data, getenv(buf));
+	else
+		append_cstr(tok->data, buf);
+	free(s);
+}
+
 static int compute_jokers(struct token *tok, struct vector *line)
 {
 	struct vector *wildcards = expand_wildcards(tok);
-	if (wildcards == NULL)
+	if (wildcards == NULL) {
+		expand_var(tok);
 		return push_back(line, tok);
+	}
 	for (size_t i = 0; i < wildcards->size; i++) {
 		struct token *tok = at(wildcards, i);
 		push_back(line, tok);

@@ -110,7 +110,7 @@ static int check_some(struct string *keys, char c)
 	for (size_t i = 0; i < size_str(keys); i += 2) {
 		char start = *at_str(keys, i);
 		char end = *at_str(keys, i + 1);
-		if (start <= c && c <= end)
+		if (start <= c && c <= end || end <= c && c <= start)
 			return 1;
 	}
 	return 0;
@@ -144,7 +144,8 @@ static int check_link(struct link *ln, char *c)
 		return check_none(ln->keys, c);
 	case STAR:
 		return 1;
-	case QUESTION_MARK: return strlen(c) > 0 ? 1 : 0;
+	case QUESTION_MARK:
+		return strlen(c) > 0 ? 1 : 0;
 	default:
 		return 0;
 	}

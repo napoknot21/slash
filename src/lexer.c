@@ -95,7 +95,7 @@ static enum token_type_spec compute_spec_1(const char *data)
 	case ')':
 		return RCURVE;
 	case '$':
-		return DOLLARD;
+		return DOLLAR;
 	default:
 		return SPEC_NONE;
 	}

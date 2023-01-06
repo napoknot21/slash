@@ -77,7 +77,8 @@ enum token_type_spec {
 	IN,
 	QUOTE,
 	DOT,
-	DOLLARD,
+	DOLLAR,
+	TILDE,
 	LCURVE,
 	RCURVE
 

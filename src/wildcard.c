@@ -317,6 +317,11 @@ static enum token_type_spec compute_token_type(char c)
 		return HYPHEN;
 	case '?':
 		return QUESTION_MARK;
+	case '~':
+		return TILDE;
+	case '$':
+		return DOLLAR;
+
 	default:
 		return SPEC_NONE;
 	}
@@ -333,24 +338,49 @@ static struct token *compute_tok(char *arg, int start, int end, int spec)
 	return t;
 }
 
+static struct vector *check_special(char *arg, size_t len,
+				    struct vector *tokens)
+{
+	enum token_type_spec spec;
+	switch (arg[0]) {
+	case '~':
+		spec = (len == 1) ? TILDE : INTERNAL;
+		break;
+	case '$':
+		spec = DOLLAR;
+		break;
+	case '*':
+		spec = (len == 2 && arg[1] == '*') ? DSTAR : INTERNAL;
+		break;
+	default:
+		spec = INTERNAL;
+	}
+
+	if (spec != INTERNAL) {
+		struct token *t = make_token(arg, JOKER, spec);
+		push_back(tokens, t);
+		free(t);
+		return tokens;
+	}
+	return NULL;
+}
+
 static struct vector *build_tokens(char *arg)
 {
 	size_t len = strlen(arg);
 	struct vector *tokens = make_vector(
 		sizeof(struct token), (void (*)(void *))destruct_token, NULL);
-	if (tokens == NULL)
+
+	if (tokens == NULL || len == 0)
 		return NULL;
-	if (len == 2 && arg[0] == '*' && arg[1] == '*') {
-		struct token *t = make_token(arg, JOKER, DSTAR);
-		push_back(tokens, t);
-		free(t);
+	if (check_special(arg, len, tokens) != NULL) {
 		return tokens;
 	}
-
 	size_t start = 0;
 	int has_bracket = 0;
 	struct token *last = NULL;
 	int is_none = 0;
+	int is_dollar = 0;
 
 	for (size_t i = 0; i < len; i++) {
 		enum token_type_spec spec = compute_token_type(arg[i]);
@@ -366,8 +396,8 @@ static struct vector *build_tokens(char *arg)
 			}
 		// fall through
 		case SPEC_NONE:
-			is_none = 1;
-			c = has_bracket ? 0 : 1;
+			is_none = is_dollar ? 0 : 1;
+			c = has_bracket && !is_dollar ? 0 : 1;
 			break;
 		case RBRACKET:
 			c = 0;
@@ -377,6 +407,11 @@ static struct vector *build_tokens(char *arg)
 			c = 0;
 			change_bracket = 1;
 			break;
+		case DOLLAR:
+			is_dollar = 1;
+			c = 1;
+			break;
+
 		default:
 			c = 0;
 		}
@@ -395,9 +430,11 @@ static struct vector *build_tokens(char *arg)
 			start = i;
 		}
 		has_bracket = change_bracket ? !has_bracket : has_bracket;
+		spec = is_dollar ? DOLLAR : spec;
 		last = compute_tok(arg, start, i, spec);
 		start = i + 1;
 		is_none = 0;
+		is_dollar = 0;
 	}
 	if (last != NULL) {
 		push_back(tokens, last);
@@ -538,6 +575,46 @@ static void compute_star(struct token *tok, struct string *buffer,
 	push_back(subtokens, tok);
 }
 
+static void compute_tilde(struct token *tok, struct string *buffer,
+			  struct vector *subtokens)
+{
+	tok->type_spec = SPEC_NONE;
+	char *home;
+	if (!has_bracket && ((home = getenv("HOME")) != NULL)) {
+		clear_str(tok->data);
+		append_cstr(tok->data, home);
+	}
+	compute_spec_none(tok, buffer, subtokens);
+}
+
+static void compute_dollar(struct token *tok, struct string *buffer,
+			   struct vector *subtokens)
+{
+	char *data = c_str(tok->data);
+	clear_str(tok->data);
+	char *var = getenv(data + 1);
+	if (var != NULL) {
+		append_cstr(tok->data, var);
+	}
+	free(data);
+	if (has_bracket) {
+		push_back_str(buffer, '$');
+		push_back(subtokens, tok);
+	} else {
+		tok->type_spec = SPEC_NONE;
+		compute_spec_none(tok, buffer, subtokens);
+	}
+}
+
+static void compute_some(struct string *buffer, struct vector *subtokens)
+{
+	char *tmp = c_str(buffer);
+	struct token *some = make_token(tmp, JOKER, SOME);
+	push_back(subtokens, some);
+	free_token(some);
+	free(tmp);
+}
+
 static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 						   struct string *buffer,
 						   struct wildcard_token *last,
@@ -546,6 +623,20 @@ static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 	switch (tok->type_spec) {
 	case SLASH:
 		return add_token(buffer, last, subtokens);
+	case TILDE:
+		compute_tilde(tok, buffer, subtokens);
+		break;
+	case DOLLAR:
+		compute_dollar(tok, buffer, subtokens);
+		break;
+	case RBRACKET:
+		if (has_bracket) {
+			has_bracket = 0;
+			compute_some(buffer, subtokens);
+		} else {
+			error = ESYNTAX;
+		}
+	// fall through
 	case SPEC_NONE:
 		compute_spec_none(tok, buffer, subtokens);
 		break;
@@ -561,14 +652,6 @@ static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 
 	case LBRACKET:
 		has_bracket = 1;
-		break;
-	case RBRACKET:
-		has_bracket = 0;
-		char *tmp = c_str(buffer);
-		struct token *some = make_token(tmp, JOKER, SOME);
-		push_back(subtokens, some);
-		free_token(some);
-		free(tmp);
 		break;
 	default:
 		error = EUNKNOWN;
@@ -593,6 +676,9 @@ static void add_last_token(struct vector *result, struct string *buf,
 
 static struct vector *parse(struct vector *tokens)
 {
+	has_hyphen = 0;
+	has_bracket = 0;
+	error = 0;
 	if (tokens->size == 0) {
 		return NULL;
 	}
@@ -627,7 +713,7 @@ static struct vector *parse(struct vector *tokens)
 	add_last_token(result, buf, subtoks);
 	free_string(buf);
 	free_vector(subtoks);
-	if (has_hyphen || has_bracket) {
+	if (has_hyphen || has_bracket || error) {
 		result->free = destruct_wt;
 		free_vector(result);
 		return NULL;
@@ -641,6 +727,8 @@ static int has_wildcards(struct string *s)
 		switch (compute_token_type(*at_str(s, i))) {
 		case SPEC_NONE:
 		case HYPHEN:
+		case DOLLAR:
+		case TILDE:
 			break;
 		default:
 			return 1;
@@ -839,8 +927,9 @@ error:
 
 static struct vector *interpret(struct vector *wtokens)
 {
-	has_bracket = 0;
 	has_hyphen = 0;
+	has_bracket = 0;
+	error = 0;
 	if (wtokens->size == 0) {
 		return NULL;
 	}
@@ -918,8 +1007,9 @@ error_malloc:
 
 struct vector *expand_wildcards(struct token *tok)
 {
-	has_bracket = 0;
 	has_hyphen = 0;
+	has_bracket = 0;
+	error = 0;
 	if (!has_wildcards(tok->data))
 		return NULL;
 
