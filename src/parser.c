@@ -23,6 +23,16 @@ static void free_argv(char **argv, size_t size);
 static int exec_external(struct vector *line, int fdin, int fdout, int fderr);
 static int compute_jokers(struct token *tok, struct vector *line);
 
+static int need_do = 0;
+static int need_in = 0;
+static int need_done = 0;
+static int need_then = 0;
+static int need_else = 0;
+static int need_fi = 0;
+static int need_curve = 0;
+static int need_quote = 0;
+static int need_dquote = 0;
+
 static char **convertstr(struct vector *line)
 {
 	char **argv = calloc(sizeof(*argv), line->size + 1);
@@ -47,21 +57,6 @@ static void free_argv(char **argv, size_t size)
 			free(argv[i]);
 	}
 	free(argv);
-}
-
-static void expand_bracket(struct token *tok, char *s)
-{
-	if (s[1] != '\0' && s[1] == '$') {
-		push_back_str(tok->data, '[');
-		char name[NAME_MAX + 1];
-		size_t len = strlen(s + 2);
-		memcpy(name, s + 2, len - 1);
-		name[len - 1] = '\0';
-		append_cstr(tok->data, getenv(name));
-		push_back_str(tok->data, ']');
-	} else {
-		append_cstr(tok->data, s);
-	}
 }
 
 static void expand_var(struct token *tok)
@@ -112,8 +107,6 @@ static int compute_cmd(struct token *tok, struct vector *line, int iscmd)
 {
 	if (iscmd ||
 	    (tok->type_spec != INTERNAL && tok->type_spec != EXTERNAL)) {
-		// raise error
-		printf("error cmd");
 		slasherrno = S_EFAIL;
 		return 1;
 	}
@@ -155,6 +148,71 @@ static int exec_external(struct vector *line, int fdin, int fdout, int fderr)
 	return ret;
 }
 
+static int check_control(struct token *tok, size_t i, struct vector *tokens)
+{
+	int end = i + 1 >= tokens->size ||
+		  ((struct token *)at(tokens, i + 1))->type == OPERATOR;
+	switch (tok->type_spec) {
+	case IF:
+		need_then++;
+		return !end;
+	case WHILE:
+		need_do++;
+		return !end;
+	case DO:
+		need_do--;
+		need_done++;
+		return !end && need_do >= 0;
+	case FOR:
+		need_in++;
+		return !end && ((struct token *)at(tokens, i + 1))->type == ARG;
+	case THEN:
+		need_else++;
+		need_fi++;
+		need_then--;
+		return !end && need_then >= 0;
+	case ELSE:
+		need_else--;
+		return !end && need_else >= 0;
+	case IN:
+		need_do++;
+		need_in--;
+		return !end && need_in >= 0;
+	case NOT:
+		return !end;
+	case DONE:
+		need_done--;
+		return end && need_done >= 0;
+	case DOLLAR_CMD:
+		need_curve++;
+		return !end;
+	case FI:
+		need_else = 0;
+		need_fi--;
+		return end && need_fi >= 0;
+	default:
+		return 1;
+	}
+}
+
+static int check_syntax(struct token *tok)
+{
+	switch (tok->type_spec) {
+	case QUOTE:
+		if (!need_dquote)
+			need_quote = !need_quote;
+		break;
+	case DQUOTE:
+		if (!need_quote)
+			need_dquote = !need_dquote;
+		break;
+
+	default:
+		break;
+	}
+	return need_dquote || need_quote;
+}
+
 int exec(struct vector *line, int fdin, int fdout, int fderr)
 {
 	if (line->size == 0)
@@ -179,10 +237,25 @@ int exec(struct vector *line, int fdin, int fdout, int fderr)
 	return ret;
 }
 
+static int something_is_missing()
+{
+	return need_do || need_in || need_done || need_then || need_else ||
+	       need_quote || need_curve || need_dquote || need_fi;
+}
+
 struct vector *parse(struct vector *tokens)
 {
+
+	need_fi = 0;
+	need_do = 0;
+	need_in = 0;
+	need_done = 0;
+	need_then = 0;
+	need_else = 0;
+	need_curve = 0;
+	need_quote = 0;
+	need_dquote = 0;
 	int iscmd = 0;
-	// int pout = -1;
 	int ret = 0;
 
 	struct vector *line = make_vector(sizeof(struct token),
@@ -191,6 +264,13 @@ struct vector *parse(struct vector *tokens)
 
 	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
 		struct token *tok = at(tokens, i);
+		if ((need_dquote && tok->type_spec != DQUOTE) ||
+		    (need_quote && tok->type_spec != QUOTE)) {
+			struct token *last = at(line, line->size - 1);
+			append(last->data, tok->data);
+			push_back_str(last->data, ' ');
+			continue;
+		}
 		switch (tok->type) {
 		case CMD:
 			ret = compute_cmd(tok, line, iscmd);
@@ -203,22 +283,51 @@ struct vector *parse(struct vector *tokens)
 			if (i + 1 >= tokens->size) {
 				ret = -1;
 				push_back(line, tok);
-				slasherrno = S_ELISTENING;
+				slasherrno = S_ESYNTAX;
 				break;
 			}
 			push_back(line, tok);
 			break;
 		case ARG:
 			ret = compute_args(tok, line);
+			iscmd = 0;
 			break;
+		case SYNTAX:
+			ret = check_syntax(tok);
+			if (ret) {
+				clear_str(tok->data);
+				tok->type = ARG;
+				tok->type_spec = SPEC_NONE;
+				push_back(line, tok);
+			} else {
+				struct token *last = at(line, line->size - 1);
+				pop_back_str(last->data);
+			}
+			ret = 0;
+			iscmd = 0;
+
+			break;
+		case CONTROL:
+			ret = !check_control(tok, i, tokens);
+			slasherrno = ret != 0 ? S_ESYNTAX : slasherrno;
+			iscmd = 0;
+		// fall through
 		case OPERATOR:
 			push_back(line, tok);
+			iscmd = 0;
 			break;
 		default:
-			ret = -1;
 			slasherrno = S_EUNKNOWN;
+			free_vector(line);
+			return NULL;
 			break;
 		}
+	}
+	if (ret || something_is_missing()) {
+		slasherrno = S_ESYNTAX;
+		werror();
+		free_vector(line);
+		return NULL;
 	}
 	return line;
 }

@@ -9,12 +9,12 @@
 #define S_ESKILL 128
 #define S_ESIG 255
 #define S_EOBOUND 255
-#define S_EUNKNOWN 1
-#define S_ELISTENING 256
+#define S_EUNKNOWN 3
+#define S_ESYNTAX 2
 
 extern short slasherrno;
 extern short is_exit_call;
-//char *get_error();
+char *get_error();
 int of_errno();
-
+void werror();
 #endif

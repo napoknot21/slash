@@ -6,10 +6,12 @@
  * Define the token type
  */
 enum token_type {
-	CMD,	   // Command
-	REDIRECT,  // Redirection
-	ARG,	   // Argument
-	OPERATOR,  // Operator
+	CMD,	  // Command
+	REDIRECT, // Redirection
+	ARG,	  // Argument
+	OPERATOR, // Operator
+	CONTROL,
+	SYNTAX,
 	TYPE_NONE, // Default type
 	JOKER
 };
@@ -56,17 +58,25 @@ enum token_type_spec {
 	SOME,
 	DSTAR,
 	QUESTION_MARK,
-	EXCLAMATION_MARK,
-
-	HYPHEN,
-	LBRACKET,
-	RBRACKET,
-	LBRACE,
-	RBRACE,
 	SLASH,
 	PATH,
 	REGEX,
+	DOLLAR,
+	TILDE,
+	HYPHEN,
+	LBRACKET,
+	RBRACKET,
 
+	/**
+	 * Syntax specification
+	 */
+	DQUOTE,
+	QUOTE,
+	ECHAP,
+
+	/**
+	 * Control specification
+	 */
 	IF,
 	THEN,
 	ELSE,
@@ -75,12 +85,19 @@ enum token_type_spec {
 	WHILE,
 	FOR,
 	IN,
-	QUOTE,
-	DOT,
-	DOLLAR,
-	TILDE,
+	FI,
+
+	DOLLAR_CMD,
+	NOT,
+
+	/**
+	 * Other
+	 */
+	LBRACE,
+	RBRACE,
 	LCURVE,
-	RCURVE
+	RCURVE,
+	DOT,
 
 };
 

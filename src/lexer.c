@@ -68,7 +68,9 @@ static char *cpy(char *src);
 static int isnextcmd(struct token *last)
 {
 	return last == NULL || last->type_spec == PIPE ||
-	       last->type == OPERATOR;
+	       last->type == OPERATOR || last->type_spec == DO ||
+	       last->type_spec == THEN || last->type_spec == ELSE ||
+	       last->type_spec == DOLLAR_CMD;
 }
 
 static enum token_type_spec compute_spec_1(const char *data)
@@ -83,19 +85,11 @@ static enum token_type_spec compute_spec_1(const char *data)
 	case ';':
 		return SEMICOLON;
 	case '!':
-		return EXCLAMATION_MARK;
+		return NOT;
 	case '"':
+		return DQUOTE;
+	case '\'':
 		return QUOTE;
-	case '[':
-		return LBRACKET;
-	case ']':
-		return RBRACKET;
-	case '(':
-		return LCURVE;
-	case ')':
-		return RCURVE;
-	case '$':
-		return DOLLAR;
 	default:
 		return SPEC_NONE;
 	}
@@ -120,6 +114,8 @@ static enum token_type_spec compute_spec_2(const char *data)
 		return (data[1] == '&') ? AND : SPEC_NONE;
 	case '|':
 		return (data[1] == '|') ? OR : SPEC_NONE;
+	case 'f':
+		return (data[1] == 'i') ? FI : SPEC_NONE;
 	case 'd':
 		return (data[1] == 'o') ? DO : SPEC_NONE;
 	case 'i':
@@ -131,6 +127,8 @@ static enum token_type_spec compute_spec_2(const char *data)
 		default:
 			return SPEC_NONE;
 		}
+	case '$':
+		return (data[1] == '(') ? DOLLAR_CMD : SPEC_NONE;
 	default:
 		return SPEC_NONE;
 	}
@@ -171,7 +169,7 @@ static enum token_type_spec compute_spec_4(const char *data)
 	case 'e':
 		return strcmp(data + 1, "lse") == 0 ? ELSE : SPEC_NONE;
 	case 'd':
-		return strcmp(data + 1, "one") == 0 ? ELSE : SPEC_NONE;
+		return strcmp(data + 1, "one") == 0 ? DONE : SPEC_NONE;
 	default:
 		return SPEC_NONE;
 	}
@@ -179,7 +177,7 @@ static enum token_type_spec compute_spec_4(const char *data)
 
 static enum token_type_spec compute_spec_5(const char *data)
 {
-	return strcmp(data + 1, "while") == 0 ? WHILE : SPEC_NONE;
+	return strcmp(data, "while") == 0 ? WHILE : SPEC_NONE;
 }
 
 static enum token_type_spec compute_spec(const char *data, size_t len)
@@ -206,10 +204,12 @@ static enum token_type computetype(enum token_type_spec type)
 	case INTERNAL:
 	case EXTERNAL:
 		return CMD;
+
 	case AND:
 	case OR:
 	case SEMICOLON:
 		return OPERATOR;
+
 	case STDIN:
 	case PIPE:
 	case STDOUT:
@@ -219,8 +219,43 @@ static enum token_type computetype(enum token_type_spec type)
 	case STDERR_APPEND:
 	case STDERR_TRUNC:
 		return REDIRECT;
+
+	case NOT:
+	case IF:
+	case THEN:
+	case ELSE:
+	case WHILE:
+	case DO:
+	case DONE:
+	case FOR:
+	case FI:
+	case IN:
+	case DOLLAR_CMD:
+		return CONTROL;
+
+	case DQUOTE:
+	case QUOTE:
+		return SYNTAX;
+
 	default:
 		return ARG;
+	}
+}
+
+static int need_to_be_first(enum token_type_spec t)
+{
+	switch (t) {
+	case IF:
+	case THEN:
+	case WHILE:
+	case FOR:
+	case DO:
+	case FI:
+	case DONE:
+	case ELSE:
+		return 1;
+	default:
+		return 0;
 	}
 }
 
@@ -228,13 +263,14 @@ static struct token *buildtoken(const char *str, struct token *last)
 {
 	enum token_type_spec type_spec = compute_spec(str, strlen(str));
 	enum token_type type = computetype(type_spec);
-	if (isnextcmd(last)) {
-		if (type != ARG || type_spec != SPEC_NONE) {
-			printf(" type = %d, spec = %d\n", type, type_spec);
-			return NULL; // TODO print err selon le token
-		}
+	if ((last && last->type_spec != SEMICOLON) && (type == CONTROL) &&
+	    need_to_be_first(type_spec)) {
+		type = ARG;
+		type_spec = SPEC_NONE;
+	}
+	if (isnextcmd(last) && type == ARG && type_spec == SPEC_NONE) {
+		type_spec = INTERNAL;
 		type = CMD;
-		type_spec = (is_internal(str)) ? INTERNAL : EXTERNAL;
 	}
 	struct token *t = make_token(str, type, type_spec);
 	return t;

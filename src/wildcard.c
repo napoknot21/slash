@@ -636,7 +636,7 @@ static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 		} else {
 			error = ESYNTAX;
 		}
-	// fall through
+	break;
 	case SPEC_NONE:
 		compute_spec_none(tok, buffer, subtokens);
 		break;
@@ -651,6 +651,7 @@ static struct wildcard_token *compute_wildcard_tok(struct token *tok,
 		break;
 
 	case LBRACKET:
+	clear_str(buffer);
 		has_bracket = 1;
 		break;
 	default:
