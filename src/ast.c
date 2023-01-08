@@ -206,6 +206,8 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 		for(size_t i = 0; i < argc; i++) 
 			free(argv[i]);
+
+		free(argv);
 	}
 
 	return status;
@@ -324,6 +326,9 @@ void copy_ast(struct ast_t * src, struct ast_t * dst)
 
 void destruct_ast(struct ast_t * ast)
 {	
+	if(ast->tok.type != TYPE_NONE) 
+		free_string(ast->tok.data);
+
 	if(ast->childs) {
 
 		for(size_t k = 0; k < ast->size; k++)
