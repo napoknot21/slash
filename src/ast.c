@@ -19,10 +19,31 @@
 
 int polska(struct token * tokens, size_t size, struct vector * ops, struct vector * args, struct vector * argc)
 {
-	size_t cc = 0;
+/*
+	for(size_t i = 0; i < size - 1; i++) {
 
+		if(tokens[i].type == REDIRECT) {
+
+			push_back(ops, &tokens[i]);
+			push_back(args, &tokens[i + 1]);
+			
+			size_t red_size = 2;
+			
+			push_back(argc, &red_size);
+
+			break;
+		}
+
+	}
+*/
+	size_t cc = 0;
 	for(size_t i = 0; i < size; i++)
 	{
+/*		if(tokens[i].type == REDIRECT) {
+			i++;
+			continue;
+		}
+*/
 		if(tokens[i].type == ARG) {
 
 			push_back(args, &tokens[i]);
@@ -31,9 +52,10 @@ int polska(struct token * tokens, size_t size, struct vector * ops, struct vecto
 
 		}
 
-		if(i) push_back(argc, &cc);
+		if(i) 
+			push_back(argc, &cc);
+		
 		push_back(ops, &tokens[i]);
-
 		cc = 0;
 	}
 
@@ -57,6 +79,8 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 	size_t ast_s = sizeof(struct ast_t);
 	struct ast_t * last = NULL;
 
+	size_t arg_ptr = 0;
+
 	for(size_t i = 0; i < ops->size; i++) {
 
 		size_t * c = (size_t*) at(argc, i);
@@ -64,20 +88,25 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 
 		copy_token(at(ops, i), &ast->tok);
 		ast->size = *c;		
+	
+		size_t j = 0;
 
 		if(last) {
 			
 			ast->size++;
 
 			ast->childs = malloc(ast->size * ast_s);
-			copy_ast(ast->childs, last);
-		
+			copy_ast(last, ast->childs);	
+
+			j++;
+
 		} else
-			ast->childs = malloc(ast->size * ast_s);
+			ast->childs = malloc(ast->size * ast_s);	
 
-		for(size_t j = 0; j < ast->size; j++) {
+		for(; j < ast->size && arg_ptr < args->size; j++) {	
 
-			copy_token(at(args, j), &ast->childs[j].tok);
+			copy_token(at(args, arg_ptr++), &ast->childs[j].tok);	
+
 			ast->childs[j].size = 0;
 			ast->childs[j].childs = NULL;	
 		}
@@ -109,6 +138,9 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	for(k = 0; k < size; k++) {			
 
 		int p = tokens[k].type_spec == PIPE;
+		/*
+		 * Manages pipes
+		 */	
 
 		if(!p)
 			offset++;	
@@ -137,6 +169,53 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	free_vector(asts);
 
 	return gast;
+}
+
+int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
+{
+	int in_t = *in, out_t = *out;
+	int ret = 1;
+
+	int * fd = out;
+	int flags = 0;
+
+	switch(ts) {
+
+	case STDIN:	
+		flags = O_RDONLY;
+		ret = 0;
+		fd = in;
+		break;
+
+	case STDOUT:
+		flags = O_WRONLY | O_CREAT;
+		break;
+
+	case STDOUT_TRUNC:
+		flags = O_WRONLY | O_TRUNC | O_CREAT;
+		break;
+
+	case STDOUT_APPEND:
+		flags = O_WRONLY | O_APPEND | O_CREAT;
+		break;
+
+	default:
+		return -1;
+
+	}
+
+	*fd = open(filename, flags, 0664);
+	if(*fd == -1) {
+
+		*in = in_t;
+		*out = out_t;
+
+		perror("Impossible d'ouvrir ce fichier.");
+		return -1;
+			
+	}
+
+	return ret;
 }
 
 int process_ast(const struct ast_t * ast, int in, int out, int err) 
@@ -210,6 +289,20 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 			free(argv[i]);
 
 		free(argv);
+	
+	} else if(ast->tok.type == REDIRECT) {		
+
+		char * filename = c_str(ast->childs[1].tok.data);	
+		int s = openfd(filename, ast->tok.type_spec, &in, &out);	
+
+		free(filename);
+
+		status = process_ast(ast->childs, in, out, err);	
+
+		if(!s) 
+			close(in);
+		else if(s == 1) 
+			close(out);
 	}
 
 	return status;
@@ -263,9 +356,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		pipe(fd);
 
 		fds[2 * k - 1] = fd[1];	
-		fds[2 * k] = fd[0];
-
-	//	fcntl(fds[2 * k], F_SETFL, O_NONBLOCK);
+		fds[2 * k] = fd[0];	
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
@@ -281,7 +372,8 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		} else if(!pids[k]) {
 		
 			if(k) close(fds[2 * k - 1]);
-			process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);	
+			int status = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);
+			exit(status);	
 			
 		}
 	}
@@ -300,10 +392,10 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	
 		pid_t p = waitpid(pids[k], &stat, 0);
 		if(p == -1) {
-
+/*
 			perror("Erreur lors de l'exécution des processus\n");
 			slasherrno = 1;
-
+*/
 			return;
 
 		}

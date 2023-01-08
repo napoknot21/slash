@@ -245,6 +245,8 @@ static int something_is_missing()
 
 struct vector *parse(struct vector *tokens)
 {
+	if(!tokens->size)
+		return NULL;
 
 	need_fi = 0;
 	need_do = 0;
