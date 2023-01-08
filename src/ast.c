@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <fcntl.h>
 
 #define PIPE_BUF 512
 
@@ -243,16 +244,17 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	int * fds = malloc(ast_s * 2 * sizeof(int));
 
 	fds[0] = in;
-	fds[ast_s * 2 - 1] = out;
-
-	int fd[2];
+	fds[ast_s * 2 - 1] = out;	
 
 	for(size_t k = 1; k < ast_s; k++) {	
 
+		int fd[2];
 		pipe(fd);
 
 		fds[2 * k - 1] = fd[1];	
 		fds[2 * k] = fd[0];
+
+	//	fcntl(fds[2 * k], F_SETFL, O_NONBLOCK);
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
@@ -267,27 +269,38 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		
 		} else if(!pids[k]) {
 		
-			int s = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);	
-			exit(s);
+			if(k) close(fds[2 * k - 1]);
+			process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);	
 			
-		}	
-	}	
+		}
+	}
 
+	for(size_t i = 1; i < ast_s; i++)
+		close(fds[i]);	
+
+	free(fds);
 	int stat;	
 
 	/*
 	 * Waits for the first process of the chain to end
 	 */
 
-	waitpid(pids[ast_s - 1], &stat, 0);
-
-	for(size_t i = 1; i < 2 * ast_s - 1; i++) {		
+	for(size_t k = 0; k < ast_s; k++) {
 	
-		close(fds[i]);		
+		pid_t p = waitpid(pids[k], &stat, 0);
+		if(p == -1) {
+
+			perror("Erreur lors de l'exécution des processus\n");
+			slasherrno = 1;
+
+			return;
+
+		}
+
+		slasherrno = WEXITSTATUS(stat);
 
 	}
-
-	free(fds);
+	
 	free(pids);
 }
 

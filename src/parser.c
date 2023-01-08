@@ -111,7 +111,7 @@ static int compute_cmd(struct token *tok, struct vector *line, int iscmd)
 		return 1;
 	}
 	int ret = compute_jokers(tok, line);
-	struct token *cmd = (struct token *)at(line, 0);
+	struct token *cmd = (struct token *)at(line, line->size - 1);
 	cmd->type = tok->type;
 	char *name = c_str(cmd->data);
 	cmd->type_spec = is_internal(name) ? INTERNAL : EXTERNAL;

@@ -46,45 +46,19 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 		return 1;
 
 	char ** exargv = exec_format(argc, argv);
-/*
-	struct sigaction sa = { 0 };
-	sa.sa_handler = extern_handler;
-*/
+
+	dup2(in, STDIN_FILENO);
+	dup2(out, STDOUT_FILENO);
+	dup2(err, STDERR_FILENO);
+
 	/*
-	 * Lancement du processus
+	 * Recouvrement du processus
 	 */
 
-	pid_t process = fork();
-	int retval = -1;
+	execvp(argv[0], exargv);	
+		
+	perror(argv[0]);
+	free(exargv);
+	_exit(of_errno());
 
-	switch(process) {
-
-	case -1:
-		return 1;
-
-	case 0:
-		/*
-		 * Changements des fd de sortie
-		 */
-
-		dup2(in, STDIN_FILENO);
-		dup2(out, STDOUT_FILENO);
-		dup2(err, STDERR_FILENO);
-
-		/*
-		 * Recouvrement du processus
-		 */
-
-		int status = execvp(argv[0], exargv);
-
-		if(status == -1) {
-			perror(argv[0]);
-			free(exargv);
-			exit(of_errno());
-		}
-	}
-
-	free(exargv);	
-	wait(&retval);	
-	return WEXITSTATUS(retval);	
 }
