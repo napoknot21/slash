@@ -61,7 +61,7 @@ void free_vector(struct vector *vec)
 	free(vec);
 }
 
-int push_back(struct vector *vec, void *data)
+int push_back(struct vector *vec, const void *data)
 {
 	if (vec->size >= vec->capacity) {
 		reserve(vec, vec->capacity * 2);

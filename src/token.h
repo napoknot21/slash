@@ -2,6 +2,8 @@
 #define SLASH_TOKEN_H
 #include "string.h"
 
+#define VECTOR_TOKEN_CONSTRUCTOR sizeof(struct token), (void(*)(void*)) destruct_token, (void (*)(void*, void*)) copy_token
+
 /**
  * Define the token type
  */

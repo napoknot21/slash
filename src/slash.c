@@ -4,6 +4,7 @@
 #include "string.h"
 #include "token.h"
 #include "vector.h"
+#include "ast.h"
 
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -96,7 +97,11 @@ int main()
 		struct vector *line = parse(tokens);
 		free_vector(tokens);
 		if (line) {
-			exec(line, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+		//	exec(line, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+			struct ast_t * gast = make_gast(line->data, line->size);
+			exec_ast(gast, 0, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
+
+			free_ast(gast);
 			free_vector(line);
 		}
 		if (is_exit_call)

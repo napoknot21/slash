@@ -12,7 +12,7 @@ struct vector {
 
 	void *data;
 	void (*free)(void *);
-	void (*copy)(void *, void *);
+	void (*copy)(const void *, void *);
 };
 
 /*
@@ -28,7 +28,7 @@ void copy_vec(const struct vector *, struct vector *);
  * Operation functions
  */
 
-int push_back(struct vector *, void *);
+int push_back(struct vector *, const void *);
 int append_vec(struct vector *u, struct vector *v);
 void pop_back(struct vector *);
 void *peek_pop(struct vector *vec, void *dst);

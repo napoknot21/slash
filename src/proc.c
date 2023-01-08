@@ -7,9 +7,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <limits.h>
-
+/*
 void extern_handler(int sig)
 {
+	printf("%d\n", sig);
 	switch(sig) {
 
 		case SIGINT: break;
@@ -18,7 +19,7 @@ void extern_handler(int sig)
 
 	}
 }
-
+*/
 char ** exec_format(int argc, char ** argv)
 {
 	/*
@@ -45,10 +46,10 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 		return 1;
 
 	char ** exargv = exec_format(argc, argv);
-
+/*
 	struct sigaction sa = { 0 };
 	sa.sa_handler = extern_handler;
-
+*/
 	/*
 	 * Lancement du processus
 	 */
@@ -80,14 +81,10 @@ int built_out(int in, int out, int err, int argc, char ** argv)
 			perror(argv[0]);
 			free(exargv);
 			exit(of_errno());
-
 		}
-		//fall through
-	default:
-		wait(&retval);
-		free(exargv);
-		return WEXITSTATUS(retval);
 	}
 
-
+	free(exargv);	
+	wait(&retval);	
+	return WEXITSTATUS(retval);	
 }
