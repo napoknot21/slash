@@ -223,7 +223,7 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 	/*
 	 * Starts a new process, creating
 	 * a new group
-	 */	
+	 */		
 
 	int status = 0;	
 
@@ -313,11 +313,14 @@ int ast_is_internal(const struct ast_t * ast)
 	if(!ast || ast->tok.type == TYPE_NONE)
 		return 0;
 
-	char * cmd = c_str(ast->tok.data);	
+	char * cmd = c_str(ast->tok.data);		
 	int ret = 0;
 
 	if(!strcmp(cmd, "cd") || !strcmp(cmd, "pwd") || !strcmp(cmd, "exit"))
-		ret = 1;
+		return 1;	
+
+	for(size_t i = 0; i < ast->size && !ret; i++)
+		ret = ast_is_internal(ast->childs + i);
 
 	free(cmd);
 	return ret;
@@ -325,7 +328,7 @@ int ast_is_internal(const struct ast_t * ast)
 
 void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 {
-	if(bin || ast_is_internal(ast->childs)) {
+	if(bin || ast_is_internal(ast->childs)) {	
 
 		/*
 		 * If slash is executing a slash
@@ -378,7 +381,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		}
 	}
 
-	for(size_t i = 1; i < ast_s; i++)
+	for(size_t i = 1; i < 2 * ast_s - 1; i++)
 		close(fds[i]);	
 
 	free(fds);
@@ -392,10 +395,10 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	
 		pid_t p = waitpid(pids[k], &stat, 0);
 		if(p == -1) {
-/*
+
 			perror("Erreur lors de l'exécution des processus\n");
 			slasherrno = 1;
-*/
+
 			return;
 
 		}
