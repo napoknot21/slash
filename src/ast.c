@@ -84,7 +84,11 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 		
 		last = ast;
 
-	}		
+	}
+
+	free_vector(ops);
+	free_vector(args);
+	free_vector(argc);	
 
 	return last;
 }
@@ -199,6 +203,9 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 		}
 
 		free_string(cmd);
+
+		for(size_t i = 0; i < argc; i++) 
+			free(argv[i]);
 	}
 
 	return status;
@@ -229,7 +236,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		 * main process.
 		 */		
 
-		process_ast(ast->childs, in, out, err);
+		slasherrno = process_ast(ast->childs, in, out, err);
 		return;
 	}
 
