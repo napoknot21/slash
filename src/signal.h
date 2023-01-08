@@ -43,15 +43,27 @@ const char *signal_get_descr (int signal);
 //void free_signal (struct signal *sg);
 
 /**
- * @brief The 'main' signal handler function
- * @param sig the signal's id number
+ * @brief Set all signal handler to SIG_DFL 
  */
-static void signal_handler(int sig);
+void reset_signal_handler (void);
 
-//temp functions
+/**
+ * @brief Set signal handlers to default handlers
+ */
+void set_signal_handler (void);
+
+/**
+ * @brief do something depending on the signal
+ * @param signal the signal to specify the action
+ */
+void signal_handle (int signal);
+
+
+//temp functions 
+/*
 void handler_sigstp (int signal);
 
 void handler_sigkill (int signal);
 
-
+*/
 #endif

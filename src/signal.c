@@ -4,7 +4,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 
+#include "slasherrno.h"
 #include "signal.h"
 
 #define SIG_TABLE_SIZE 36
@@ -150,7 +152,9 @@ const char *signal_get_descr (int signal)
     return NULL;
 }
 
-/*
+//static const pid_t main_pid = getpid();
+
+
 static void signal_handler(int signal) 
 {
 
@@ -159,6 +163,7 @@ static void signal_handler(int signal)
     switch (signal) {
         
         case SIGWINCH :
+            //TODO finish handlers
             break;
         
         case SIGHUP :
@@ -179,7 +184,59 @@ static void signal_handler(int signal)
     }
     
 }
-*/
+
+
+void reset_signal_handler (void) 
+{
+    struct sigaction sg;
+    sigemptyset(&sg.sa_mask);
+    sg.sa_flags = 0;
+    sg.sa_handler = SIG_DFL;
+
+    for (int i = 0; i < SIG_TABLE_SIZE; i++) {
+        struct signal s = signal_table[i];
+        if (s.signal == SIGHUP) {
+            struct sigaction old_sg;
+            sigaction(SIGHUP, NULL, &old_sg);
+            if (old_sg.sa_handler == SIG_IGN) continue;
+        }
+        sigaction (s.signal, &sg, NULL);
+    }
+}
+
+
+void set_signal_handler () 
+{
+    struct sigaction sg;
+    sg.sa_flags = 0;
+    sigemptyset(&sg.sa_mask);
+
+    //ignore SIGINT
+    sg.sa_sigaction = NULL;
+    sg.sa_handler = SIG_IGN;
+    sigaction (SIGINT, &sg, NULL);
+
+    //Ignore SIGTERM
+    sg.sa_handler = SIG_DFL;
+    sigaction (SIGTERM, &sg, NULL);
+
+}
+
+
+void signal_handle (int signal) 
+{
+    struct sigaction sg;
+
+    if ((signal == SIGINT)  || (signal == SIGQUIT) || (signal == SIGTSTP) || (signal == SIGTTIN ) ||
+        (signal == SIGTTOU) || (signal == SIGCHLD))
+        return;
+
+    sg.sa_flags = 0;
+    sigemptyset (&sg.sa_mask);
+    sg.sa_flags = SA_SIGINFO;
+    sg.sa_sigaction = &signal_handler;
+    sigaction (signal, &sg, NULL);
+}
 
 //static pid_t main_pid = getpid(); //Store the "main" pid
 
