@@ -97,7 +97,7 @@ static int test_lexline(char *line, char **d, enum token_type *t,
 int test_token()
 {
 	int bool = 1;
-	bool &= ASSERT(test_newtokencmd("ls", CMD, EXTERNAL));
+	bool &= ASSERT(test_newtokencmd("ls", CMD, INTERNAL));
 	bool &= ASSERT(test_newtokencmd("pwd", CMD, INTERNAL));
 	bool &= ASSERT(test_newtoken("<", REDIRECT, STDIN));
 	bool &= ASSERT(test_newtoken(">", REDIRECT, STDOUT));
@@ -126,19 +126,19 @@ int test_lex()
 	line = "cmd an argument";
 	*d = (char *[]){"cmd", "an", "argument"};
 	*t = (enum token_type[]){CMD, ARG, ARG};
-	*ts = (enum token_type_spec[]){EXTERNAL, SPEC_NONE, SPEC_NONE};
+	*ts = (enum token_type_spec[]){INTERNAL, SPEC_NONE, SPEC_NONE};
 	bool &= ASSERT(test_lexline(line, *d, *t, *ts, 3));
 
 	line = "cmd | cmd";
 	*d = (char *[]){"cmd", "|", "cmd"};
 	*t = (enum token_type[]){CMD, REDIRECT, CMD};
-	*ts = (enum token_type_spec[]){EXTERNAL, PIPE, EXTERNAL};
+	*ts = (enum token_type_spec[]){INTERNAL, PIPE, INTERNAL};
 	bool &= ASSERT(test_lexline(line, *d, *t, *ts, 3));
 
 	line = "cmd arg 2> file";
 	*d = (char *[]){"cmd", "arg", "2>", "file"};
 	*t = (enum token_type[]){CMD, ARG, REDIRECT, ARG};
-	*ts = (enum token_type_spec[]){EXTERNAL, SPEC_NONE, STDERR, SPEC_NONE};
+	*ts = (enum token_type_spec[]){INTERNAL, SPEC_NONE, STDERR, SPEC_NONE};
 	bool &= ASSERT(test_lexline(line, *d, *t, *ts, 4));
 
 	line = "cmd arg arg | cmd arg | cmd >| file >> log";
@@ -147,9 +147,9 @@ int test_lex()
 	*t = (enum token_type[]){CMD,	   ARG, ARG,	  REDIRECT,
 				 CMD,	   ARG, REDIRECT, CMD,
 				 REDIRECT, ARG, REDIRECT, ARG};
-	*ts = (enum token_type_spec[]){EXTERNAL,  SPEC_NONE,	 SPEC_NONE,
-				       PIPE,	  EXTERNAL,	 SPEC_NONE,
-				       PIPE,	  EXTERNAL,	 STDOUT_TRUNC,
+	*ts = (enum token_type_spec[]){INTERNAL,  SPEC_NONE,	 SPEC_NONE,
+				       PIPE,	  INTERNAL,	 SPEC_NONE,
+				       PIPE,	  INTERNAL,	 STDOUT_TRUNC,
 				       SPEC_NONE, STDOUT_APPEND, SPEC_NONE};
 	bool &= ASSERT(test_lexline(line, *d, *t, *ts, 12));
 

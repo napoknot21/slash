@@ -28,7 +28,7 @@ void handler(int sig)
  * Polonaise inversée
  */
 
-int polska(const struct token * tokens, size_t size, struct vector * ops, struct vector * args, struct vector * argc)
+int polska(struct token * tokens, size_t size, struct vector * ops, struct vector * args, struct vector * argc)
 {
 	size_t cc = 0;
 
@@ -56,7 +56,7 @@ int polska(const struct token * tokens, size_t size, struct vector * ops, struct
 	return 0;
 }
 
-struct ast_t * make_ast(const struct token * tokens, size_t size)
+struct ast_t * make_ast(struct token * tokens, size_t size)
 {
 	struct vector * ops = make_vector(VECTOR_TOKEN_CONSTRUCTOR);
 	struct vector * args = make_vector(VECTOR_TOKEN_CONSTRUCTOR);
@@ -103,7 +103,7 @@ struct ast_t * make_ast(const struct token * tokens, size_t size)
 	return last;
 }
 
-struct ast_t * make_gast(const struct token * tokens, size_t size)
+struct ast_t * make_gast(struct token * tokens, size_t size)
 {
 	size_t ast_s = sizeof(struct ast_t);
 
@@ -195,21 +195,17 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 		switch(ast->tok.type_spec) {
 
-			case INTERNAL:
-				int intern = is_internal(argv[0]);
-				if(intern) {
+			case INTERNAL:	
+				struct string * cmd = make_string(argv[0]);
+				struct internal sint = get_internal(cmd);
 
-					struct string * cmd = make_string(argv[0]);
-					struct internal sint = get_internal(cmd);
+				free_string(cmd);
 
-					free_string(cmd);
-
-					status = sint.cmd(out, err, argc, argv);
+				status = sint.cmd(out, err, argc, argv);
 /*
 					if(status != 255 && !strcmp(argv[0], "exit"))	
 						kill(getppid(), SIGTERM);	
 */
-				}
 
 				break;
 
@@ -322,7 +318,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	free(pids);
 }
 
-void copy_ast(const struct ast_t * src, struct ast_t * dst)
+void copy_ast(struct ast_t * src, struct ast_t * dst)
 {	
 	copy_token(&src->tok, &dst->tok);
 	dst->size = src->size;

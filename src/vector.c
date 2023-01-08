@@ -16,7 +16,7 @@ struct vector *make_vector(size_t elem_s, void (*free)(void *), void (*copy)(voi
 	return vec;
 }
 
-void copy_vec(const struct vector * vec, struct vector * cp)
+void copy_vec(struct vector * vec, struct vector * cp)
 {
 	memset(cp, 0x0, sizeof(struct vector));
 
@@ -61,7 +61,7 @@ void free_vector(struct vector *vec)
 	free(vec);
 }
 
-int push_back(struct vector *vec, const void *data)
+int push_back(struct vector *vec, void *data)
 {
 	if (vec->size >= vec->capacity) {
 		reserve(vec, vec->capacity * 2);

@@ -26,14 +26,14 @@ struct ast_t
  * Constructors
  */
 
-struct ast_t * make_ast(const struct token *, size_t);
-struct ast_t * make_gast(const struct token *, size_t);
+struct ast_t * make_ast(struct token *, size_t);
+struct ast_t * make_gast(struct token *, size_t);
 
 /*
  * Modifiers
  */
 
-void copy_ast(const struct ast_t*, struct ast_t*);
+void copy_ast(struct ast_t*, struct ast_t*);
 
 /*
  * Observers
