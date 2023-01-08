@@ -12,18 +12,6 @@
 
 #define PIPE_BUF 512
 
-
-void handler(int sig)
-{	
-	switch(sig) {
-
-	case SIGTERM:
-		is_exit_call = 1;
-		break;
-
-	}
-}
-
 /*
  * Polonaise inversée
  */
@@ -34,9 +22,6 @@ int polska(struct token * tokens, size_t size, struct vector * ops, struct vecto
 
 	for(size_t i = 0; i < size; i++)
 	{
-	//	struct token * tok = tokens + i;
-	//	enum token_type type = tok->type;
-
 		if(tokens[i].type == ARG) {
 
 			push_back(args, &tokens[i]);
@@ -168,7 +153,7 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 		size_t argc = 1 + ast->size;	
 		char ** argv = malloc(argc * sizeof(char*));
 
-		argv[0] = c_str(ast->tok.data);
+		argv[0] = c_str(ast->tok.data);	
 
 		int fds[2];
 		status = pipe(fds);
@@ -184,7 +169,7 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 			memset(buffer, 0x0, PIPE_BUF);
 			process_ast(ast->childs + i, fds[0], fds[1], err);	
-			ssize_t bs = read(fds[0], buffer, PIPE_BUF);			
+			ssize_t bs = read(fds[0], buffer, PIPE_BUF);				
 
 			argv[i + 1] = malloc(bs + 1);
 			argv[i + 1][bs] = 0;
@@ -193,29 +178,26 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 		free(buffer);	
 
+		struct string * cmd = make_string(argv[0]);
+		struct internal sint;
+
 		switch(ast->tok.type_spec) {
 
-			case INTERNAL:	
-				struct string * cmd = make_string(argv[0]);
-				struct internal sint = get_internal(cmd);
-
-				free_string(cmd);
-
-				status = sint.cmd(out, err, argc, argv);
-/*
-					if(status != 255 && !strcmp(argv[0], "exit"))	
-						kill(getppid(), SIGTERM);	
-*/
-
+			case INTERNAL:			
+				sint = get_internal(cmd);
+				status = sint.cmd(out, err, argc, argv);	
 				break;
 
-			case EXTERNAL:
+			case EXTERNAL:	
 				status = built_out(in, out, err, argc, argv);
 				break;
 
-			default:	
+			default:
+				break;	
 
 		}
+
+		free_string(cmd);
 	}
 
 	return status;
@@ -269,21 +251,12 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 
 		pipe(fd);
 
-		fds[2 * k - 1] = fd[1];
-		if(k + 1 <= ast_s)
-			fds[2 * k] = fd[0];
+		fds[2 * k - 1] = fd[1];	
+		fds[2 * k] = fd[0];
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
 	
-/*
-	struct sigaction sa;
-
-	memset(&sa, 0, sizeof(struct sigaction));
-	sa.sa_handler = handler;
-	sigaction(SIGTERM, &sa, NULL);
-*/
-
 	for(size_t k = 0; k < ast_s; k++) {
 	
 		pids[k] = fork();
@@ -293,10 +266,10 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 			return;
 		
 		} else if(!pids[k]) {
-	
-			int s = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);		
-			_exit(s);
 		
+			int s = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);	
+			exit(s);
+			
 		}	
 	}	
 
@@ -306,15 +279,15 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	 * Waits for the first process of the chain to end
 	 */
 
-	waitpid(pids[0], &stat, 0);
+	waitpid(pids[ast_s - 1], &stat, 0);
 
-	for(size_t i = 1; i < ast_s; i++) {		
+	for(size_t i = 1; i < 2 * ast_s - 1; i++) {		
 	
-		close(fds[2 * i]);	
-		close(fds[2 * i + 1]);
+		close(fds[i]);		
 
 	}
 
+	free(fds);
 	free(pids);
 }
 
