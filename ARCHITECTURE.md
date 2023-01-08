@@ -4,7 +4,7 @@
 ## Structures de données
 
 Nous avons implémenté un lexer, un parser,  des jetons (token) , des tableaux à taille variable (vector.c), 
-des chaînes de caractères à taille variable, un ast et un automate (automaton.c).
+des chaînes de caractères à taille variable, un arbre abstrait de syntaxe et un automate (automaton.c).
 
 
 ## Les modules
@@ -141,3 +141,26 @@ Puis on execute la ligne grâce à l'ast
 
 Si on a un appel à exit, on quitte et on affiche le message de sortie.
 
+### AST (ast.c)
+
+Récupère la ligne de jetons créée par le parser lors de la récupération d'une ligne sur l'entrée standard.
+
+Pour simplifier le travail, une polonaise inversée est appliquée sur la chaîne de jetons.
+
+Grâce à cette dernière, il est facile de construire l'arbre.
+
+Localement, les commande et opérateur représentent les noeuds tandis que les arguments représentent les feuilles.
+
+En présence de tubes dans l'expression donnée, plusieurs arbres sont créés.
+
+Lors de l'exécution, ils seront exécutés chacun par un processus différent.
+
+### Structures de donnée
+
+De manière à rendre l'abstraction plus facile, plusieurs structures ont été implémentées, suivant un modèle orienté objet.
+
+Ainsi, le vecteur (vector.c) représente un tableau dynamique, qui effectue chaque ajout par recopie.
+
+La chaîne de caractère dynamique (string.c) est basée sur le vecteur, étant un cas particulier d'un tableau dynamique de caractère.
+
+Des fonctions utilitaires ont pu être écrite ensuite, telles que la troncation, la comparaison, la récupération etc.
