@@ -134,6 +134,8 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	for(size_t i = 0; i < gast->size; i++)
 		copy_ast(at(asts, i), gast->childs + i);		
 
+	free_vector(asts);
+
 	return gast;
 }
 
