@@ -9,7 +9,17 @@
 #include "slasherrno.h"
 #include "signal.h"
 
-#define SIG_TABLE_SIZE 36
+/* Non-zero after SIGINT. */
+volatile sig_atomic_t interrupt_state = 0;
+
+/* Non-zero after SIGTERM */
+volatile sig_atomic_t sigterm_received = 0;
+
+/* When non-zero, we throw_to_top_level (). */
+int interrupt_immediately = 0;
+
+/* When non-zero, we call the terminating signal handler immediately. */
+int terminate_immediately = 0;
 
 static const struct signal signal_table[] = {
 #ifdef SIGHUP
@@ -122,12 +132,17 @@ static const struct signal signal_table[] = {
 #endif
 };
 
+#define SIG_TABLE_SIZE (sizeof (signal_table) / sizeof (struct signal))
+
+#define XSIGNAL(x) (signal_table[x].signal)
+#define XNAME(x) (signal_table[x].name)
+#define XDESC(x) (signal_table[x].desc)
+
 
 int char_to_signal (const char *str)
 {
     for (int i = 0; i < SIG_TABLE_SIZE; i++) {
-        struct signal s = signal_table[i];
-        if (strcmp(s.name, str) == 0) return s.signal;
+        if (strcmp(XNAME(i), str) == 0) return XSIGNAL(i);
     }
     return -1;
 }
@@ -136,8 +151,7 @@ int char_to_signal (const char *str)
 const char *signal_get_name (int signal) 
 {
     for (int i = 0; i < SIG_TABLE_SIZE; i++) {
-        struct signal s = signal_table[i];
-        if (s.signal == signal) return s.name;
+        if (XSIGNAL(i) == signal) return XNAME(i);
     }
     return NULL;
 }
@@ -146,8 +160,7 @@ const char *signal_get_name (int signal)
 const char *signal_get_descr (int signal)
 {
     for (int i = 0; i < SIG_TABLE_SIZE; i++) {
-        struct signal s = signal_table[i];
-        if (s.signal == signal) return s.desc;
+        if (XSIGNAL(i) == signal) return XDESC(i);
     }
     return NULL;
 }
