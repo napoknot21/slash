@@ -9,61 +9,18 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-struct signal {
-    // signal id
-    int signal;
-    // signal name
-    const char *name;
-    // signal description
-    const char *desc;
-};
+/* Non-zero after SIGINT. */
+volatile sig_atomic_t interrupt_state = 0;
 
-/**
- * @brief Check and search the signal id in the signal table by name
- * @param str string signal name 
- * @return the signal's id number or -1 if not found
- */
-int char_to_signal (const char *str);
+/* Non-zero after SIGTERM */
+volatile sig_atomic_t sigterm_received = 0;
 
-/**
- * @brief Check and search the signal name in the signal table by signal id
- * @param signal the signal's id number
- * @return the signal's name or NULL if not found
-*/
-const char *signal_get_name (int signal);
+void set_signalint ();
 
-/**
- * @brief Check and search the signal description in the signal table by signal
- * @param signal the signal's id number
- * @return the signal's description or NULL if not found
- */
-const char *signal_get_descr (int signal);
+void set_sigterm ();
 
-//void signal *make_signal (int, const char *name, const char *desc);
-//void free_signal (struct signal *sg);
+int get_sigterm ();
 
-/**
- * @brief Set all signal handler to SIG_DFL 
- */
-void reset_signal_handler (void);
+void set_signal_handler();
 
-/**
- * @brief Set signal handlers to default handlers
- */
-void set_signal_handler (void);
-
-/**
- * @brief do something depending on the signal
- * @param signal the signal to specify the action
- */
-void signal_handle (int signal);
-
-
-//temp functions 
-/*
-void handler_sigstp (int signal);
-
-void handler_sigkill (int signal);
-
-*/
 #endif
