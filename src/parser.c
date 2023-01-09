@@ -1,7 +1,6 @@
 #include "parser.h"
 
 #include "internals.h"
-#include "proc.h"
 #include "signal.h"
 #include "slasherrno.h"
 #include "string.h"
@@ -18,10 +17,6 @@
 
 static int compute_cmd(struct token *tok, struct vector *line, int iscmd);
 static int compute_args(struct token *tok, struct vector *line);
-static int exec_internal(struct vector *line, int fdout, int fderr);
-static char **convertstr(struct vector *line);
-static void free_argv(char **argv, size_t size);
-static int exec_external(struct vector *line, int fdin, int fdout, int fderr);
 static int compute_jokers(struct token *tok, struct vector *line);
 
 static int need_do = 0;
@@ -34,31 +29,7 @@ static int need_curve = 0;
 static int need_quote = 0;
 static int need_dquote = 0;
 static int need_bracket = 0;
-static char **convertstr(struct vector *line)
-{
-	char **argv = calloc(sizeof(*argv), line->size + 1);
-	if (argv == NULL) {
-		return NULL;
-	}
-	for (size_t i = 0; i < line->size; i++) {
-		struct token *tok = at(line, i);
-		argv[i] = (char *)c_str(tok->data);
-		if (argv[i] == NULL) {
-			free_argv(argv, i);
-			return NULL;
-		}
-	}
-	return argv;
-}
 
-static void free_argv(char **argv, size_t size)
-{
-	for (size_t i = 0; i < size; i++) {
-		if (argv[i] != NULL)
-			free(argv[i]);
-	}
-	free(argv);
-}
 
 static void expand_var(struct token *tok)
 {
@@ -135,29 +106,6 @@ static int compute_args(struct token *tok, struct vector *line)
 	return compute_jokers(tok, line);
 }
 
-static int exec_internal(struct vector *line, int fdout, int fderr)
-{
-	struct token *name = at(line, 0);
-	struct internal c = get_internal(name->data);
-	char **argv = convertstr(line);
-	if (c.cmd == NULL) {
-		return S_ENOCMD;
-	}
-	if (argv == NULL) {
-		return S_EFAIL;
-	}
-	int ret = c.cmd(fdout, fderr, (int)line->size, argv);
-	free_argv(argv, line->size);
-	return ret;
-}
-
-static int exec_external(struct vector *line, int fdin, int fdout, int fderr)
-{
-	char **argv = convertstr(line);
-	int ret = built_out(fdin, fdout, fderr, line->size, argv);
-	free_argv(argv, line->size);
-	return ret;
-}
 
 static int check_control(struct token *tok, size_t i, struct vector *tokens)
 {
@@ -228,30 +176,6 @@ static int check_syntax(struct token *tok)
 		break;
 	}
 	return need_dquote || need_quote;
-}
-
-int exec(struct vector *line, int fdin, int fdout, int fderr)
-{
-	if (line->size == 0)
-		return slasherrno;
-	struct token *cmd = at(line, 0);
-	if (cmd == NULL) {
-		return -1;
-	}
-	int ret = 0;
-	switch (cmd->type_spec) {
-	case INTERNAL:
-		ret = exec_internal(line, fdout, fderr);
-		break;
-	case EXTERNAL:
-		ret = exec_external(line, fdin, fdout, fderr);
-		break;
-	default:
-		slasherrno = S_ENOCMD;
-		return S_ENOCMD;
-	}
-	slasherrno = ret;
-	return ret;
 }
 
 static int something_is_missing()

@@ -10,6 +10,5 @@
  * @return 1 if an error occured and slasherrno is set, 0 otherwise
  */
 struct vector *parse(struct vector *tokens); // TODO
-int exec(struct vector *line, int fdin, int fdout, int fderr);
 
 #endif
