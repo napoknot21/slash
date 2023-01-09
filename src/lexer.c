@@ -327,6 +327,10 @@ struct vector *lex(char *line)
 	}
 	free(last);
 	free(line);
+	if (tokens->size == 0) {
+		free_vector(tokens);
+		return NULL;
+	}
 	return tokens;
 
 error:

@@ -98,7 +98,7 @@ int proceed_script(const char * path)
 	while(read(fd, buffer, 512) > 0) {
 
 		append_cstr(data, buffer);
-		memset(buffer, 0x0, 512);	
+		memset(buffer, 0x0, 512);
 
 	}
 
@@ -126,14 +126,15 @@ int main(int argc, char ** argv)
 	rl_outstream = stderr;
 	char *prompt = compute_prompt();
 	while ((line = readline(prompt)) != NULL) {
+		interrupt_state = 0;
+		sigterm_received = 0;
 		free(prompt);
 		prompt = NULL;
 		add_history(line);
 		struct vector *tokens = lex(line);
 		free(line);
 		if (tokens == NULL) {
-			slasherrno = S_EFAIL;
-			break;
+			continue;
 		}
 		struct vector *line = parse(tokens);
 		free_vector(tokens);
