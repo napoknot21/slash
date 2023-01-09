@@ -5,6 +5,7 @@
 #include "string.h"
 #include "token.h"
 #include "vector.h"
+#include "signal.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -382,7 +383,7 @@ static struct vector *build_tokens(char *arg)
 	int is_none = 0;
 	int is_dollar = 0;
 
-	for (size_t i = 0; i < len; i++) {
+	for (size_t i = 0; i < len && (interrupt_state == 0 && sigterm_received == 0); i++) {
 		enum token_type_spec spec = compute_token_type(arg[i]);
 		int c = 0;
 		int change_bracket = 0;
@@ -497,7 +498,7 @@ error_null:
 
 static enum token_type_spec compute_jt_type(struct vector *subtokens)
 {
-	for (size_t i = 0; i < subtokens->size; i++) {
+	for (size_t i = 0; i < subtokens->size && (sigterm_received == 0 && interrupt_state == 0); i++) {
 		struct token *t = at(subtokens, i);
 		switch (t->type_spec) {
 		case DSTAR:
@@ -699,7 +700,7 @@ static struct vector *parse(struct vector *tokens)
 		push_back(result, wt);
 		free_wt(wt);
 	}
-	for (; i < tokens->size && error == 0; i++) {
+	for (; i < tokens->size && error == 0 && (interrupt_state == 0 && sigterm_received == 0); i++) {
 		tok = at(tokens, i);
 		struct wildcard_token *tmp =
 			compute_wildcard_tok(tok, buf, last, subtoks);
@@ -724,7 +725,7 @@ static struct vector *parse(struct vector *tokens)
 
 static int has_wildcards(struct string *s)
 {
-	for (size_t i = 0; i < s->cnt->size; i++) {
+	for (size_t i = 0; i < s->cnt->size && (sigterm_received == 0 && interrupt_state == 0); i++) {
 		switch (compute_token_type(*at_str(s, i))) {
 		case SPEC_NONE:
 		case HYPHEN:
@@ -892,7 +893,7 @@ static struct vector *search(struct pair *p, struct vector *queue,
 	struct stat st, lst;
 	char *c_path = NULL;
 	struct string *name = NULL;
-	for (size_t j = 0; j < entries->size; j++) {
+	for (size_t j = 0; j < entries->size && (interrupt_state == 0 && sigterm_received == 0); j++) {
 		name = at(entries, j);
 		if (size_str(p->path) + size_str(name) + 2 >= PATH_MAX) {
 			continue;
