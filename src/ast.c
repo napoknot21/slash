@@ -19,31 +19,11 @@
 
 int polska(struct token * tokens, size_t size, struct vector * ops, struct vector * args, struct vector * argc)
 {
-/*
-	for(size_t i = 0; i < size - 1; i++) {
-
-		if(tokens[i].type == REDIRECT) {
-
-			push_back(ops, &tokens[i]);
-			push_back(args, &tokens[i + 1]);
-
-			size_t red_size = 2;
-
-			push_back(argc, &red_size);
-
-			break;
-		}
-
-	}
-*/
+	
 	size_t cc = 0;
+	
 	for(size_t i = 0; i < size; i++)
 	{
-/*		if(tokens[i].type == REDIRECT) {
-			i++;
-			continue;
-		}
-*/
 		if(tokens[i].type == ARG) {
 
 			push_back(args, &tokens[i]);

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define C_RED "\001\033[31m\002"
 #define C_GREEN "\001\033[32m\002"
@@ -79,9 +80,47 @@ static char *compute_prompt()
 	return p;
 }
 
-int main()
+int proceed_script(const char * path)
+{
+	int fd = open(path, O_RDONLY);
+	if(fd == -1) {
+
+		perror("script\n");
+		return -1;
+
+	}
+
+	char buffer[512];
+	memset(buffer, 0x0, 512);
+
+	struct string * data = make_string(NULL);
+
+	while(read(fd, buffer, 512) > 0) {
+
+		append_cstr(data, buffer);
+		memset(buffer, 0x0, 512);	
+
+	}
+
+	char * c_data = c_str(data);
+
+	printf("slash script:\n%s\n", c_data);
+	free(c_data);
+
+	return 0;
+}
+
+int main(int argc, char ** argv)
 {
 	set_signal_handler();
+
+	if(argc > 1) {
+
+		proceed_script(argv[1]);
+		return slasherrno;
+
+	}
+
 	print_welcome();
 	char *line;
 	rl_outstream = stderr;
