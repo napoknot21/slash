@@ -159,30 +159,22 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 	int * fd = out;
 	int flags = 0;
 
-	switch(ts) {
+	if(ts >= STDERR && ts <= STDERR_APPEND)
+		fd = err;
+	else if(ts == STDIN) {
 
-	case STDIN:
-		flags = O_RDONLY;
+		flagss = O_RDONLY;
 		ret = 0;
 		fd = in;
-		break;
 
-	case STDOUT:
+	} else if(ts == STDOUT || ts == STDERR)
 		flags = O_WRONLY | O_CREAT;
-		break;
-
-	case STDOUT_TRUNC:
+	else if(ts == STDOUT_TRUNC || ts == STDERR_TRUNC)
 		flags = O_WRONLY | O_TRUNC | O_CREAT;
-		break;
-
-	case STDOUT_APPEND:
+	else if(ts == STDOUT_APPEND || ts == STDERR_APPEND)
 		flags = O_WRONLY | O_APPEND | O_CREAT;
-		break;
-
-	default:
+	else
 		return -1;
-
-	}
 
 	*fd = open(filename, flags, 0664);
 	if(*fd == -1) {
