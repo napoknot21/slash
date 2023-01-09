@@ -94,7 +94,21 @@ i.e. celle d'un main avec les descripteurs de l'entrée standard,
 de la sortie standard et de l'erreur standard.
 
 #### `pwd.c`
+
+Fait un appel à ```$PWD``` pour afficher les chemin courant avec les options ```-L``` (Logical) et ```-P``` (physical).
+
+la commande accepte plusieus arguments. C'est-à-dire, ```pwd -L -P -P -L``` sera accepté et prendra comme paramètre principal le dernier argument (dans l'exemple ```-L```).
+
+Retourne ```0``` si le l'executation réussi ou si les lien ne sont pas cassés, et `1` en cas d'erreur.
+
 #### `cd.c`
+
+Fait un appel aux variables d'environment ```$HOME``` et ```$PWD``` pour changer de repertoire. Les options ```-L``` et ```-P``` sont acceptées en plus du chemin.
+
+La commande normalise le chemin passé en argument et met à jour la variable d'environment ```$PWD```.
+
+Retourne ```0``` si le chemin existe bien et ```1``` dans les autres cas.
+
 #### `exit.c`
 Notifie le programme qu'il doit quitter à la fin de la lecture de la phrase.
 
@@ -164,3 +178,11 @@ Ainsi, le vecteur (vector.c) représente un tableau dynamique, qui effectue chaq
 La chaîne de caractère dynamique (string.c) est basée sur le vecteur, étant un cas particulier d'un tableau dynamique de caractère.
 
 Des fonctions utilitaires ont pu être écrite ensuite, telles que la troncation, la comparaison, la récupération etc.
+
+### Gestion de signaux
+
+De manière à detecter les signaux réçues, on utilise deux variables "globales": ```interrupt_state``` et ```sigterm_received``` (signal.h).
+
+Par défaut elles sont toutes les deux initialisée à ```0```. Elles prennent la valeur ```1``` si les signaux ```SIGINT``` OU ```SIGTERM``` sont captés.
+
+On vérifie dans l'intégralité du code la valeur de ces deux variables afin de arreter les processus en cas de signal réçu.
