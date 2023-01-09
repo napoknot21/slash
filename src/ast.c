@@ -26,9 +26,9 @@ int polska(struct token * tokens, size_t size, struct vector * ops, struct vecto
 
 			push_back(ops, &tokens[i]);
 			push_back(args, &tokens[i + 1]);
-			
+
 			size_t red_size = 2;
-			
+
 			push_back(argc, &red_size);
 
 			break;
@@ -52,14 +52,14 @@ int polska(struct token * tokens, size_t size, struct vector * ops, struct vecto
 
 		}
 
-		if(i) 
+		if(i)
 			push_back(argc, &cc);
-		
+
 		push_back(ops, &tokens[i]);
 		cc = 0;
 	}
 
-	push_back(argc, &cc);	
+	push_back(argc, &cc);
 
 	return 0;
 }
@@ -69,8 +69,8 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 	struct vector * ops = make_vector(VECTOR_TOKEN_CONSTRUCTOR);
 	struct vector * args = make_vector(VECTOR_TOKEN_CONSTRUCTOR);
 	struct vector * argc = make_vector(sizeof(size_t), NULL, NULL);
-	
-	int status = polska(tokens, size, ops, args, argc);	
+
+	int status = polska(tokens, size, ops, args, argc);
 
 	if(status) {
 		return NULL;
@@ -84,40 +84,40 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 	for(size_t i = 0; i < ops->size; i++) {
 
 		size_t * c = (size_t*) at(argc, i);
-		struct ast_t * ast = malloc(ast_s);	
+		struct ast_t * ast = malloc(ast_s);
 
 		copy_token(at(ops, i), &ast->tok);
-		ast->size = *c;		
-	
+		ast->size = *c;
+
 		size_t j = 0;
 
 		if(last) {
-			
+
 			ast->size++;
 
 			ast->childs = malloc(ast->size * ast_s);
-			copy_ast(last, ast->childs);	
+			copy_ast(last, ast->childs);
 
 			j++;
 
 		} else
-			ast->childs = malloc(ast->size * ast_s);	
+			ast->childs = malloc(ast->size * ast_s);
 
-		for(; j < ast->size && arg_ptr < args->size; j++) {	
+		for(; j < ast->size && arg_ptr < args->size; j++) {
 
-			copy_token(at(args, arg_ptr++), &ast->childs[j].tok);	
+			copy_token(at(args, arg_ptr++), &ast->childs[j].tok);
 
 			ast->childs[j].size = 0;
-			ast->childs[j].childs = NULL;	
+			ast->childs[j].childs = NULL;
 		}
-		
+
 		last = ast;
 
 	}
 
 	free_vector(ops);
 	free_vector(args);
-	free_vector(argc);	
+	free_vector(argc);
 
 	return last;
 }
@@ -127,7 +127,7 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	size_t ast_s = sizeof(struct ast_t);
 
 	struct ast_t * gast = malloc(ast_s);
-	memset(gast, 0x0, ast_s);	
+	memset(gast, 0x0, ast_s);
 
 	gast->tok.type = TYPE_NONE;
 	gast->tok.type_spec = SPEC_NONE;
@@ -135,36 +135,36 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	struct vector * asts = make_vector(ast_s, (void (*)(void*)) destruct_ast, (void (*)(void*, void*)) copy_ast);
 	size_t from = 0, k, offset = 0;
 
-	for(k = 0; k < size; k++) {			
+	for(k = 0; k < size; k++) {
 
 		int p = tokens[k].type_spec == PIPE;
 		/*
 		 * Manages pipes
-		 */	
+		 */
 
 		if(!p)
-			offset++;	
+			offset++;
 
-		if(p || k + 1 >= size) {		
+		if(p || k + 1 >= size) {
 
-			struct ast_t * m = make_ast(tokens + from, offset);		
-			push_back(asts, m);	
+			struct ast_t * m = make_ast(tokens + from, offset);
+			push_back(asts, m);
 
 			free_ast(m);
 			from = k + 1;
 			offset = 0;
-			
+
 		}
 
-	}			
+	}
 
 	gast->size = asts->size;
-	size_t data_s = gast->size * sizeof(struct ast_t);	
+	size_t data_s = gast->size * sizeof(struct ast_t);
 
 	gast->childs = malloc(data_s);
-	
+
 	for(size_t i = 0; i < gast->size; i++)
-		copy_ast(at(asts, i), gast->childs + i);		
+		copy_ast(at(asts, i), gast->childs + i);
 
 	free_vector(asts);
 
@@ -181,7 +181,7 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 
 	switch(ts) {
 
-	case STDIN:	
+	case STDIN:
 		flags = O_RDONLY;
 		ret = 0;
 		fd = in;
@@ -212,34 +212,34 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 
 		perror("Impossible d'ouvrir ce fichier.");
 		return -1;
-			
+
 	}
 
 	return ret;
 }
 
-int process_ast(const struct ast_t * ast, int in, int out, int err) 
+int process_ast(const struct ast_t * ast, int in, int out, int err)
 {
 	/*
 	 * Starts a new process, creating
 	 * a new group
-	 */		
+	 */
 
-	int status = 0;	
+	int status = 0;
 
-	if(ast->tok.type == ARG) {	
+	if(ast->tok.type == ARG) {
 
 		char * cstr = c_str(ast->tok.data);
 		write(out, cstr, ast->tok.data->cnt->size);
 
 		free(cstr);
 
-	} else if(ast->tok.type == CMD) {	
+	} else if(ast->tok.type == CMD) {
 
-		size_t argc = 1 + ast->size;	
+		size_t argc = 1 + ast->size;
 		char ** argv = malloc(argc * sizeof(char*));
 
-		argv[0] = c_str(ast->tok.data);	
+		argv[0] = c_str(ast->tok.data);
 
 		int fds[2];
 		status = pipe(fds);
@@ -249,59 +249,59 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 			return 1;
 		}
 
-		char * buffer = malloc(PIPE_BUF);	
+		char * buffer = malloc(PIPE_BUF);
 
 		for(size_t i = 0; i < argc - 1; i++) {
 
 			memset(buffer, 0x0, PIPE_BUF);
-			process_ast(ast->childs + i, fds[0], fds[1], err);	
-			ssize_t bs = read(fds[0], buffer, PIPE_BUF);				
+			process_ast(ast->childs + i, fds[0], fds[1], err);
+			ssize_t bs = read(fds[0], buffer, PIPE_BUF);
 
 			argv[i + 1] = malloc(bs + 1);
 			argv[i + 1][bs] = 0;
-			memmove(argv[i + 1], buffer, bs);	
+			memmove(argv[i + 1], buffer, bs);
 		}
 
-		free(buffer);	
+		free(buffer);
 
 		struct string * cmd = make_string(argv[0]);
 		struct internal sint;
 
 		switch(ast->tok.type_spec) {
 
-			case INTERNAL:			
+			case INTERNAL:
 				sint = get_internal(cmd);
-				status = sint.cmd(out, err, argc, argv);	
+				status = sint.cmd(out, err, argc, argv);
 				break;
 
-			case EXTERNAL:	
+			case EXTERNAL:
 				status = built_out(in, out, err, argc, argv);
 				break;
 
 			default:
-				break;	
+				break;
 
 		}
 
 		free_string(cmd);
 
-		for(size_t i = 0; i < argc; i++) 
+		for(size_t i = 0; i < argc; i++)
 			free(argv[i]);
 
 		free(argv);
-	
-	} else if(ast->tok.type == REDIRECT) {		
 
-		char * filename = c_str(ast->childs[1].tok.data);	
-		int s = openfd(filename, ast->tok.type_spec, &in, &out);	
+	} else if(ast->tok.type == REDIRECT) {
+
+		char * filename = c_str(ast->childs[1].tok.data);
+		int s = openfd(filename, ast->tok.type_spec, &in, &out);
 
 		free(filename);
 
-		status = process_ast(ast->childs, in, out, err);	
+		status = process_ast(ast->childs, in, out, err);
 
-		if(!s) 
+		if(!s)
 			close(in);
-		else if(s == 1) 
+		else if(s == 1)
 			close(out);
 	}
 
@@ -313,11 +313,14 @@ int ast_is_internal(const struct ast_t * ast)
 	if(!ast || ast->tok.type == TYPE_NONE)
 		return 0;
 
-	char * cmd = c_str(ast->tok.data);		
+	char * cmd = c_str(ast->tok.data);
 	int ret = 0;
 
-	if(!strcmp(cmd, "cd") || !strcmp(cmd, "pwd") || !strcmp(cmd, "exit"))
-		return 1;	
+	if(!strcmp(cmd, "cd") || !strcmp(cmd, "pwd") || !strcmp(cmd, "exit")) {
+		free(cmd);
+		return 1;
+	}
+
 
 	for(size_t i = 0; i < ast->size && !ret; i++)
 		ret = ast_is_internal(ast->childs + i);
@@ -328,13 +331,13 @@ int ast_is_internal(const struct ast_t * ast)
 
 void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 {
-	if(bin || ast_is_internal(ast->childs)) {	
+	if(bin || ast_is_internal(ast->childs)) {
 
 		/*
 		 * If slash is executing a slash
 		 * program, then we stand on the
 		 * main process.
-		 */		
+		 */
 
 		slasherrno = process_ast(ast->childs, in, out, err);
 		return;
@@ -342,7 +345,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 
 	/*
 	 * Otherwise, we start a new process
-	 */	
+	 */
 
 	size_t ast_s = ast->size;
 
@@ -351,48 +354,48 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	int * fds = malloc(ast_s * 2 * sizeof(int));
 
 	fds[0] = in;
-	fds[ast_s * 2 - 1] = out;	
+	fds[ast_s * 2 - 1] = out;
 
-	for(size_t k = 1; k < ast_s; k++) {	
+	for(size_t k = 1; k < ast_s; k++) {
 
 		int fd[2];
 		pipe(fd);
 
-		fds[2 * k - 1] = fd[1];	
-		fds[2 * k] = fd[0];	
+		fds[2 * k - 1] = fd[1];
+		fds[2 * k] = fd[0];
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
-	
+
 	for(size_t k = 0; k < ast_s; k++) {
-	
+
 		pids[k] = fork();
 		if(pids[k] == -1) {
-		
-			dprintf(err, "AST error: failed at launch!");	
+
+			dprintf(err, "AST error: failed at launch!");
 			return;
-		
+
 		} else if(!pids[k]) {
-		
+
 			if(k) close(fds[2 * k - 1]);
 			int status = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);
-			exit(status);	
-			
+			exit(status);
+
 		}
 	}
 
 	for(size_t i = 1; i < 2 * ast_s - 1; i++)
-		close(fds[i]);	
+		close(fds[i]);
 
 	free(fds);
-	int stat;	
+	int stat;
 
 	/*
 	 * Waits for the first process of the chain to end
 	 */
 
 	for(size_t k = 0; k < ast_s; k++) {
-	
+
 		pid_t p = waitpid(pids[k], &stat, 0);
 		if(p == -1) {
 
@@ -406,24 +409,24 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		slasherrno = WEXITSTATUS(stat);
 
 	}
-	
+
 	free(pids);
 }
 
 void copy_ast(struct ast_t * src, struct ast_t * dst)
-{	
+{
 	copy_token(&src->tok, &dst->tok);
 	dst->size = src->size;
 
-	dst->childs = malloc(dst->size * sizeof(struct ast_t));		
+	dst->childs = malloc(dst->size * sizeof(struct ast_t));
 
 	for(size_t k = 0; k < dst->size; k++)
-		copy_ast(src->childs + k, dst->childs + k);	
+		copy_ast(src->childs + k, dst->childs + k);
 }
 
 void destruct_ast(struct ast_t * ast)
-{	
-	if(ast->tok.type != TYPE_NONE) 
+{
+	if(ast->tok.type != TYPE_NONE)
 		free_string(ast->tok.data);
 
 	if(ast->childs) {
@@ -432,7 +435,7 @@ void destruct_ast(struct ast_t * ast)
 			destruct_ast(ast->childs + k);
 
 		free(ast->childs);
-	}	
+	}
 }
 
 void free_ast(struct ast_t * ast)
