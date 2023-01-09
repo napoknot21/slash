@@ -5,9 +5,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 /* Non-zero after SIGINT. */
 extern volatile sig_atomic_t interrupt_state;

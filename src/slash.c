@@ -62,7 +62,7 @@ static char *compute_prompt()
 	char *color = (slasherrno != 0) ? C_RED : C_GREEN;
 	char *pwd = getenv("PWD");
 	char err[4];
-	if (slasherrno == S_ESIG)
+	if (slasherrno == S_ESIG || sigterm_received || interrupt_state)
 		memcpy(err, "SIG", 4);
 	else
 		sprintf(err, "%d", slasherrno);
