@@ -35,12 +35,12 @@ int check_path_consistency(struct string * path)
 	int dir = S_ISDIR(dirmode);
 
 	if(!symlink && !dir)
-		return CONSISTENT_CHECK_NODIR; 
+		return CONSISTENT_CHECK_NODIR;
 
 	return CONSISTENT_CHECK_SUCCESS;
 }
 
-int builtin_cd_back(int out, int err, const char * pwd)
+int builtin_cd_back(int in, int out, int err, const char * pwd)
 {
 	char * old = getenv("OLDPWD");
 
@@ -55,23 +55,23 @@ int builtin_cd_back(int out, int err, const char * pwd)
 	return STATUS_CD_SUCCESS;
 }
 
-int builtin_cd_kind(int out, int err, struct string * pwd, struct string * path, int kind)
+int builtin_cd_kind(int in, int out, int err, struct string * pwd, struct string * path, int kind)
 {
 	struct string * norm = normalize_path(path, pwd, kind);
 	int status = check_path_consistency(norm);
-	
+
 	if(status == CONSISTENT_CHECK_SUCCESS) {
-		
+
 		char * cnorm = c_str(norm),
-		     * cpwd  = c_str(pwd);	
+		     * cpwd  = c_str(pwd);
 
 		status = chdir(cnorm);
 
 		if(!status) {
 
 			setenv("OLDPWD", cpwd, 1);
-			setenv("PWD", cnorm, 1);	
-		
+			setenv("PWD", cnorm, 1);
+
 		}
 
 		free(cnorm);
@@ -83,9 +83,9 @@ int builtin_cd_kind(int out, int err, struct string * pwd, struct string * path,
 	return status;
 }
 
-int builtin_cd(int out, int err, int argc, char ** argv)
+int builtin_cd(int in, int out, int err, int argc, char ** argv)
 {
-	int kind = LOGICAL_PATH;	
+	int kind = LOGICAL_PATH;
 
 	/*
 	 * This command admits the following options :
@@ -93,7 +93,7 @@ int builtin_cd(int out, int err, int argc, char ** argv)
 	 * 	- physical path (-P)
 	 */
 
-	const char * path = getenv("HOME"), * pwd = getenv("PWD");	
+	const char * path = getenv("HOME"), * pwd = getenv("PWD");
 
 	for (int k = 1; k < argc; k++) {
 
@@ -108,17 +108,17 @@ int builtin_cd(int out, int err, int argc, char ** argv)
 	}
 
 	if(!strcmp(path, "-"))
-		return builtin_cd_back(out, err, pwd);
+		return builtin_cd_back(in, out, err, pwd);
 
 	struct string * path_str = make_string(path),
-		      * pwd_str = make_string(pwd); 
+		      * pwd_str = make_string(pwd);
 
 	int status = 0;
 	if(kind == LOGICAL_PATH)
-		status = builtin_cd_kind(out, err, pwd_str, path_str, 0);
+		status = builtin_cd_kind(in, out, err, pwd_str, path_str, 0);
 
 	if(kind == PHYSICAL_PATH || status)
-		status = builtin_cd_kind(out, err, pwd_str, path_str, 1);	
+		status = builtin_cd_kind(in, out, err, pwd_str, path_str, 1);
 
 	free_string(path_str);
 	free_string(pwd_str);

@@ -16,14 +16,14 @@
 
 struct internal {
 	char *name;
-	int (*cmd)(int fdout, int fderr, int argc, char **argv);
+	int (*cmd)(int in, int fdout, int fderr, int argc, char **argv);
 };
 
 int is_internal(const char *cmd);
 struct internal get_internal(struct string *cmd);
 
-int builtin_cd(int, int, int, char **);
-int builtin_exit(int, int, int, char **);
-int builtin_pwd(int, int, int, char **);
+int builtin_cd(int, int, int, int, char **);
+int builtin_exit(int, int, int, int, char **);
+int builtin_pwd(int, int, int, int, char **);
 
 #endif

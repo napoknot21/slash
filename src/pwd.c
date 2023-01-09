@@ -18,7 +18,6 @@
 #define HELP_MESSAGE "pwd: utilisation :pwd [-LP]\n"
 
 
-int builtin_pwd (int std, int err, int argc, char **argv);
 static int logical_path (int std, int err, struct string *path, struct string *retLine);
 static int physical_path (int std, int err, struct string *path, struct string *retLine);
 static void err_message_argument (int std, int err, struct string *path, struct string *retLine, char *argv);
@@ -28,7 +27,7 @@ static void free_main_strings (struct string *path, struct string *retLine);
 /**
  * Maiin PWD function
  */
-int builtin_pwd (int std, int err, int argc, char **argv)
+int builtin_pwd (int in, int std, int err, int argc, char **argv)
 {
 
 	struct string *path = make_string(getenv("PWD"));
@@ -38,13 +37,13 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 	for (int i = 1; i < argc && (interrupt_state == 0) && (sigterm_received == 0); i++) {
 
-		if (!strcmp(argv[i], "-L")) {			
+		if (!strcmp(argv[i], "-L")) {
 			continue;
 
 		} else if (!strcmp(argv[i], "-P")) {
 			kind = PHYSICAL_PATH;
 
-		} else {			
+		} else {
 			err_message_argument(std, err, path, retLine, argv[i]);
 			return STATUS_PWD_ERROR;
 		}
@@ -55,8 +54,8 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 	 */
 	if (kind == LOGICAL_PATH) {
 
-		return logical_path(std, err, path, retLine);		
-	
+		return logical_path(std, err, path, retLine);
+
 	}
 
 	/**
@@ -67,9 +66,9 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 
 /**
- * LOGICAL_PATH argument [-L] for PWD -L 
+ * LOGICAL_PATH argument [-L] for PWD -L
  */
-static int logical_path (int std, int err, struct string *path, struct string *retLine) 
+static int logical_path (int std, int err, struct string *path, struct string *retLine)
 {
 
 	append(path, retLine);
@@ -77,11 +76,11 @@ static int logical_path (int std, int err, struct string *path, struct string *r
 	char *message = c_str(path);
 
 	if (message == NULL) {
-		
+
 		write(err, "pwd: Internal issue with the stdout\n", 36);
 
 		free_main_strings (path, retLine);
-		
+
 		return STATUS_PWD_ERROR;
 	}
 
@@ -94,18 +93,18 @@ static int logical_path (int std, int err, struct string *path, struct string *r
 }
 
 
-static int physical_path (int std, int err, struct string *path, struct string *retLine) 
+static int physical_path (int std, int err, struct string *path, struct string *retLine)
 {
 	char buff[PHYSICAL_PATH_BUFFER];
-	
+
 	char *tmp = c_str(path);
-	
+
 	char *sympath = realpath(tmp, buff);
 
 	if (sympath == NULL) {
-		
+
 		write (err, "pwd: Internal issue with the symbolic path...\n", 47);
-		
+
 		free_main_strings (path, retLine);
 
 		return STATUS_PWD_ERROR;
@@ -115,7 +114,7 @@ static int physical_path (int std, int err, struct string *path, struct string *
 
 	if (pathsym == NULL) {
 		write (err, "pwd: Internal issue getting the symlink\n",40);
-		
+
 		free_main_strings (path, retLine);
 
 		return STATUS_PWD_ERROR;
@@ -150,7 +149,7 @@ static int physical_path (int std, int err, struct string *path, struct string *
 /**
  * Functions that write in the stderr the error message for an argument !
  */
-static void err_message_argument (int std, int err, struct string *path, struct string *retLine, char *argv) 
+static void err_message_argument (int std, int err, struct string *path, struct string *retLine, char *argv)
 {
     struct string *errMessage = make_string("pwd: Invalid option: ");
 	struct string *errArg = make_string(argv);

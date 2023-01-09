@@ -271,7 +271,7 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 			case INTERNAL:
 				sint = get_internal(cmd);
-				status = sint.cmd(out, err, argc, argv);
+				status = sint.cmd(in, out, err, argc, argv);
 				break;
 
 			case EXTERNAL:
@@ -310,13 +310,13 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 int ast_is_internal(const struct ast_t * ast)
 {
-	if(!ast || ast->tok.type == TYPE_NONE)
+	if(!ast || ast->tok.type != CMD)
 		return 0;
 
 	char * cmd = c_str(ast->tok.data);
 	int ret = 0;
 
-	if(!strcmp(cmd, "cd") || !strcmp(cmd, "pwd") || !strcmp(cmd, "exit")) {
+	if(is_internal(cmd)) {
 		free(cmd);
 		return 1;
 	}
