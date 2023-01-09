@@ -27,10 +27,10 @@
 static void print_welcome() {
 	int size = 80;
 	char buf[size];
-	write(STDIN_FILENO, "\n", 1);
+	write(STDERR_FILENO, "\n", 1);
 	memset(buf, '*', size - 1);
 	buf[size -1] = '\n';
-	write (STDIN_FILENO, buf, size);
+	write (STDERR_FILENO, buf, size);
 	char line[30];
 	sprintf(line ,"Welcome into Slash %s", VERSION);
 	int len = strlen(line);
@@ -42,13 +42,13 @@ static void print_welcome() {
 	tmp [size - 2] = '*';
 	tmp [size - 1] = '\n';
 	write(STDERR_FILENO, tmp, size);
-	write (STDIN_FILENO, buf, size);
-	write(STDIN_FILENO, "\n", 1);
+	write (STDERR_FILENO, buf, size);
+	write(STDERR_FILENO, "\n", 1);
 }
 
 
 static void print_bye() {
-	dprintf(STDIN_FILENO ,"exiting... \n\n");
+	dprintf(STDERR_FILENO ,"exiting... \n\n");
 }
 
 static char *compute_prompt()

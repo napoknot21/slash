@@ -29,6 +29,7 @@ static int need_curve = 0;
 static int need_quote = 0;
 static int need_dquote = 0;
 static int need_bracket = 0;
+static int need_cmd = 0;
 
 
 static void expand_var(struct token *tok)
@@ -288,6 +289,9 @@ struct vector *parse(struct vector *tokens)
 			iscmd = (ret == 0);
 			break;
 		case REDIRECT:
+			if (!iscmd) {
+				ret = 2;
+			}
 			if (tok->type_spec == PIPE) {
 				iscmd = 0;
 			}
