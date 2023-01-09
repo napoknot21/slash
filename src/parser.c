@@ -289,11 +289,13 @@ struct vector *parse(struct vector *tokens)
 			iscmd = (ret == 0);
 			break;
 		case REDIRECT:
-			if (!i)
-				ret = 2; break;
-			struct token *last = at(line, i -1);
+			if (!i) {
+				ret = 2;
+				break;
+			}
+			struct token *last = at(line, i - 1);
 			if (last->type != CMD || last->type != ARG)
-					ret = 2;
+				ret = 2;
 			if (tok->type_spec == PIPE) {
 				iscmd = 0;
 			}
