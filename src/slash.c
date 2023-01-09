@@ -5,6 +5,7 @@
 #include "token.h"
 #include "vector.h"
 #include "ast.h"
+#include "signal.h"
 
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -80,6 +81,7 @@ static char *compute_prompt()
 
 int main()
 {
+	set_signal_handler();
 	print_welcome();
 	char *line;
 	rl_outstream = stderr;
