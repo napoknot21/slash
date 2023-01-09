@@ -2,12 +2,12 @@
 
 #include "internals.h"
 #include "proc.h"
+#include "signal.h"
 #include "slasherrno.h"
 #include "string.h"
 #include "token.h"
 #include "vector.h"
 #include "wildcard.h"
-#include "signal.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -33,7 +33,7 @@ static int need_fi = 0;
 static int need_curve = 0;
 static int need_quote = 0;
 static int need_dquote = 0;
-
+static int need_bracket = 0;
 static char **convertstr(struct vector *line)
 {
 	char **argv = calloc(sizeof(*argv), line->size + 1);
@@ -77,7 +77,15 @@ static void expand_var(struct token *tok)
 			else
 				append_cstr(tok->data, buf);
 			is_var = s[i] == '$';
+			if (s[i] == '~') {
+				is_var = 1;
+				memcpy(buf, "HOME", 5);
+			}
 			start = i + is_var;
+		}
+		if (s[i] == '~') {
+			append_cstr(tok->data, getenv("HOME"));
+			start = i + 1;
 		}
 	}
 	memcpy(buf, s + start, size - start);
@@ -96,7 +104,9 @@ static int compute_jokers(struct token *tok, struct vector *line)
 		expand_var(tok);
 		return push_back(line, tok);
 	}
-	for (size_t i = 0; i < wildcards->size && (interrupt_state == 0 && sigterm_received == 0); i++) {
+	for (size_t i = 0; i < wildcards->size &&
+			   (interrupt_state == 0 && sigterm_received == 0);
+	     i++) {
 		struct token *tok = at(wildcards, i);
 		push_back(line, tok);
 	}
@@ -191,6 +201,12 @@ static int check_control(struct token *tok, size_t i, struct vector *tokens)
 		need_else = 0;
 		need_fi--;
 		return end && need_fi >= 0;
+	case LBRACKET:
+		need_bracket++;
+		return !end;
+	case RBRACKET:
+		need_bracket--;
+		return need_bracket >= 0;
 	default:
 		return 1;
 	}
@@ -244,9 +260,68 @@ static int something_is_missing()
 	       need_quote || need_curve || need_dquote || need_fi;
 }
 
+static void compute_condition_1(struct token *tok)
+{
+	switch (*at_str(tok->data, 0)) {
+	case '<':
+		tok->type_spec = LT;
+		break;
+	case '>':
+		tok->type_spec = GT;
+		break;
+	case '!':
+		tok->type_spec = NOT;
+		break;
+	case '=':
+		tok->type_spec = EQ;
+		break;
+	default:
+		tok->type_spec = SPEC_NONE;
+	}
+}
+
+static void compute_condition_2(struct token *tok)
+{
+	char *s = at_str(tok->data, 0);
+	switch (s[0]) {
+	case '<':
+		tok->type_spec = (s[1] == '=') ? LE : SPEC_NONE;
+		break;
+	case '>':
+		tok->type_spec = (s[1] == '=') ? GE : SPEC_NONE;
+		break;
+	case '!':
+		tok->type_spec = (s[1] == '=') ? NE : SPEC_NONE;
+		break;
+	case '&':
+		tok->type_spec = (s[1] == '&') ? AND : SPEC_NONE;
+		break;
+	case '|':
+		tok->type_spec = (s[1] == '|') ? OR : SPEC_NONE;
+		break;
+	default:
+		tok->type_spec = SPEC_NONE;
+	}
+}
+
+static void compute_condition(struct token *tok)
+{
+	switch (size_str(tok->data)) {
+	case 1:
+		compute_condition_1(tok);
+		break;
+	case 2:
+		compute_condition_2(tok);
+		break;
+	default:
+		tok->type_spec = SPEC_NONE;
+		break;
+	}
+}
+
 struct vector *parse(struct vector *tokens)
 {
-	if(!tokens->size)
+	if (!tokens->size)
 		return NULL;
 
 	need_fi = 0;
@@ -258,6 +333,7 @@ struct vector *parse(struct vector *tokens)
 	need_curve = 0;
 	need_quote = 0;
 	need_dquote = 0;
+	need_bracket = 0;
 	int iscmd = 0;
 	int ret = 0;
 
@@ -265,8 +341,16 @@ struct vector *parse(struct vector *tokens)
 					  (void (*)(void *))destruct_token,
 					  (void (*)(void *, void *))copy_token);
 
-	for (size_t i = 0; (i < tokens->size) && (ret == 0) && (interrupt_state == 0 && sigterm_received == 0); i++) {
+	for (size_t i = 0; (i < tokens->size) && !ret && !interrupt_state &&
+			   !sigterm_received;
+	     i++) {
 		struct token *tok = at(tokens, i);
+		if (need_bracket && tok->type_spec != RBRACKET) {
+			compute_condition(tok);
+			tok->type = CONDITION;
+			push_back(line, tok);
+			continue;
+		}
 		if ((need_dquote && tok->type_spec != DQUOTE) ||
 		    (need_quote && tok->type_spec != QUOTE)) {
 			struct token *last = at(line, line->size - 1);

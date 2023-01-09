@@ -90,6 +90,10 @@ static enum token_type_spec compute_spec_1(const char *data)
 		return DQUOTE;
 	case '\'':
 		return QUOTE;
+	case '[' :
+		return LBRACKET;
+	case ']':
+		return RBRACKET;
 	default:
 		return SPEC_NONE;
 	}
@@ -221,6 +225,8 @@ static enum token_type computetype(enum token_type_spec type)
 		return REDIRECT;
 
 	case NOT:
+	case LBRACKET:
+	case RBRACKET:
 	case IF:
 	case THEN:
 	case ELSE:

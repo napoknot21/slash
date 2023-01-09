@@ -15,7 +15,8 @@ enum token_type {
 	CONTROL,
 	SYNTAX,
 	TYPE_NONE, // Default type
-	JOKER
+	JOKER,
+	CONDITION
 };
 
 /**
@@ -93,13 +94,25 @@ enum token_type_spec {
 	NOT,
 
 	/**
+	 * Conditions
+	*/
+
+	GT,
+	LT,
+	GE,
+	LE,
+	EQ,
+	NE,
+
+	/**
 	 * Other
 	 */
 	LBRACE,
 	RBRACE,
 	LCURVE,
 	RCURVE,
-	DOT,
+	DOT
+
 
 };
 
