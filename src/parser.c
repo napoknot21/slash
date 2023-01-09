@@ -30,7 +30,7 @@ static int need_quote = 0;
 static int need_dquote = 0;
 static int need_bracket = 0;
 static int need_cmd = 0;
-
+static int need_arg = 0;
 
 static void expand_var(struct token *tok)
 {
@@ -106,7 +106,6 @@ static int compute_args(struct token *tok, struct vector *line)
 {
 	return compute_jokers(tok, line);
 }
-
 
 static int check_control(struct token *tok, size_t i, struct vector *tokens)
 {
@@ -285,13 +284,16 @@ struct vector *parse(struct vector *tokens)
 		}
 		switch (tok->type) {
 		case CMD:
+			need_cmd--;
 			ret = compute_cmd(tok, line, iscmd);
 			iscmd = (ret == 0);
 			break;
 		case REDIRECT:
-			if (!iscmd) {
-				ret = 2;
-			}
+			if (!i)
+				ret = 2; break;
+			struct token *last = at(line, i -1);
+			if (last->type != CMD || last->type != ARG)
+					ret = 2;
 			if (tok->type_spec == PIPE) {
 				iscmd = 0;
 			}
