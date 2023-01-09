@@ -39,7 +39,7 @@ void copy_ast(struct ast_t*, struct ast_t*);
  * Observers
  */
 
-int process_ast(const struct ast_t *, int, int, int);
+int process_ast(const struct ast_t *, int*, int*, int*);
 void exec_ast(const struct ast_t *, int, int, int, int);
 
 /*

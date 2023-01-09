@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#define PIPE_BUF 512
+#define PIPE_BUF 4096
 
 /*
  * Polonaise inversée
@@ -151,9 +151,9 @@ struct ast_t * make_gast(struct token * tokens, size_t size)
 	return gast;
 }
 
-int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
+int openfd(char * filename, enum token_type_spec ts, int * in, int * out, int * err)
 {
-	int in_t = *in, out_t = *out;
+	int in_t = *in, out_t = *out, err_t = *err;
 	int ret = 1;
 
 	int * fd = out;
@@ -163,7 +163,7 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 		fd = err;
 	else if(ts == STDIN) {
 
-		flagss = O_RDONLY;
+		flags = O_RDONLY;
 		ret = 0;
 		fd = in;
 
@@ -181,6 +181,7 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 
 		*in = in_t;
 		*out = out_t;
+		*err = err_t;
 
 		perror("Impossible d'ouvrir ce fichier.");
 		return -1;
@@ -190,19 +191,19 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out)
 	return ret;
 }
 
-int process_ast(const struct ast_t * ast, int in, int out, int err)
+int process_ast(const struct ast_t * ast, int * in, int * out, int * err)
 {
 	/*
 	 * Starts a new process, creating
 	 * a new group
-	 */
+	 */	
 
 	int status = 0;
 
 	if(ast->tok.type == ARG) {
 
 		char * cstr = c_str(ast->tok.data);
-		write(out, cstr, ast->tok.data->cnt->size);
+		write(*out, cstr, ast->tok.data->cnt->size);
 
 		free(cstr);
 
@@ -226,7 +227,7 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 		for(size_t i = 0; i < argc - 1; i++) {
 
 			memset(buffer, 0x0, PIPE_BUF);
-			process_ast(ast->childs + i, fds[0], fds[1], err);
+			process_ast(ast->childs + i, &fds[0], &fds[1], err);
 			ssize_t bs = read(fds[0], buffer, PIPE_BUF);
 
 			argv[i + 1] = malloc(bs + 1);
@@ -243,11 +244,11 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 
 			case INTERNAL:
 				sint = get_internal(cmd);
-				status = sint.cmd(in, out, err, argc, argv);
+				status = sint.cmd(*in, *out, *err, argc, argv);
 				break;
 
 			case EXTERNAL:
-				status = built_out(in, out, err, argc, argv);
+				status = built_out(*in, *out, *err, argc, argv);
 				break;
 
 			default:
@@ -265,16 +266,11 @@ int process_ast(const struct ast_t * ast, int in, int out, int err)
 	} else if(ast->tok.type == REDIRECT) {
 
 		char * filename = c_str(ast->childs[1].tok.data);
-		int s = openfd(filename, ast->tok.type_spec, &in, &out);
+		int s = openfd(filename, ast->tok.type_spec, in, out, err);
 
 		free(filename);
 
 		status = process_ast(ast->childs, in, out, err);
-
-		if(!s)
-			close(in);
-		else if(s == 1)
-			close(out);
 	}
 
 	return status;
@@ -311,7 +307,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		 * main process.
 		 */
 
-		slasherrno = process_ast(ast->childs, in, out, err);
+		slasherrno = process_ast(ast->childs, &in, &out, &err);
 		return;
 	}
 
@@ -335,6 +331,8 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 
 		fds[2 * k - 1] = fd[1];
 		fds[2 * k] = fd[0];
+
+	//	fcntl(fds[2 * k], F_SETFD, O_NONBLOCK);
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
@@ -348,16 +346,26 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 			return;
 
 		} else if(!pids[k]) {
+			
+			for(size_t i = 0; i < 2 * ast_s; i++) {
+		
+				if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO && i != 2 * k && i != 2 * k + 1) 
+					close(fds[i]);
+	
+			}	
 
-			if(k) close(fds[2 * k - 1]);
-			int status = process_ast(ast->childs + k, fds[2 * k], fds[2 * k + 1], err);
+			int status = process_ast(ast->childs + k, &fds[2 * k], &fds[2 * k + 1], &err);
 			exit(status);
 
 		}
 	}
 
-	for(size_t i = 1; i < 2 * ast_s - 1; i++)
-		close(fds[i]);
+	for(size_t i = 0; i < 2 * ast_s; i++) {
+		
+		if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO) 
+			close(fds[i]);
+	
+	}
 
 	free(fds);
 	int stat;
@@ -367,7 +375,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	 */
 
 	for(size_t k = 0; k < ast_s; k++) {
-
+	
 		pid_t p = waitpid(pids[k], &stat, 0);
 		if(p == -1) {
 
