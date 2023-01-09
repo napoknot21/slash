@@ -9,6 +9,8 @@
 #include "slasherrno.h"
 #include "signal.h"
 
+volatile sig_atomic_t interrupt_state = 0;
+volatile sig_atomic_t sigterm_received = 0;
 
 void set_signalint () 
 { 

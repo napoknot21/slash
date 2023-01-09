@@ -12,6 +12,7 @@
 #include "path.h"
 #include "slasherrno.h"
 #include "string.h"
+#include "signal.h"
 
 #define RET_LINE "\n"
 #define HELP_MESSAGE "pwd: utilisation :pwd [-LP]\n"
@@ -35,7 +36,7 @@ int builtin_pwd (int std, int err, int argc, char **argv)
 
 	int kind = LOGICAL_PATH;
 
-	for (int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc && (interrupt_state == 0) && (sigterm_received == 0); i++) {
 
 		if (!strcmp(argv[i], "-L")) {			
 			continue;

@@ -10,14 +10,16 @@
 #include <sys/wait.h>
 
 /* Non-zero after SIGINT. */
-volatile sig_atomic_t interrupt_state = 0;
+extern volatile sig_atomic_t interrupt_state;
 
 /* Non-zero after SIGTERM */
-volatile sig_atomic_t sigterm_received = 0;
+extern volatile sig_atomic_t sigterm_received;
 
 void set_signalint ();
 
 void set_sigterm ();
+
+int get_signalint ();
 
 int get_sigterm ();
 

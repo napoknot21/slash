@@ -7,6 +7,7 @@
 #include "token.h"
 #include "vector.h"
 #include "wildcard.h"
+#include "signal.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -95,7 +96,7 @@ static int compute_jokers(struct token *tok, struct vector *line)
 		expand_var(tok);
 		return push_back(line, tok);
 	}
-	for (size_t i = 0; i < wildcards->size; i++) {
+	for (size_t i = 0; i < wildcards->size && (interrupt_state == 0 && sigterm_received == 0); i++) {
 		struct token *tok = at(wildcards, i);
 		push_back(line, tok);
 	}
@@ -264,7 +265,7 @@ struct vector *parse(struct vector *tokens)
 					  (void (*)(void *))destruct_token,
 					  (void (*)(void *, void *))copy_token);
 
-	for (size_t i = 0; (i < tokens->size) && (ret == 0); i++) {
+	for (size_t i = 0; (i < tokens->size) && (ret == 0) && (interrupt_state == 0 && sigterm_received == 0); i++) {
 		struct token *tok = at(tokens, i);
 		if ((need_dquote && tok->type_spec != DQUOTE) ||
 		    (need_quote && tok->type_spec != QUOTE)) {
