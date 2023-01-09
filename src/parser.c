@@ -284,7 +284,6 @@ struct vector *parse(struct vector *tokens)
 		}
 		switch (tok->type) {
 		case CMD:
-			need_cmd--;
 			ret = compute_cmd(tok, line, iscmd);
 			iscmd = (ret == 0);
 			break;
@@ -294,7 +293,7 @@ struct vector *parse(struct vector *tokens)
 				break;
 			}
 			struct token *last = at(line, i - 1);
-			if (last->type != CMD || last->type != ARG)
+			if (last->type != CMD && last->type != ARG)
 				ret = 2;
 			if (tok->type_spec == PIPE) {
 				iscmd = 0;
