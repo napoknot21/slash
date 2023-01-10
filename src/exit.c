@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 int builtin_exit(int in, int out, int err, int argc, char **argv)
 {
@@ -16,19 +17,24 @@ int builtin_exit(int in, int out, int err, int argc, char **argv)
 	}
 
 	short code = slasherrno;
-
 	char *src = NULL;
 
 	if (in != STDIN_FILENO) {
-		char buf[] = {0, 0, 0, 0, 0};
-		read(in, buf, 4);
+
+		char buf[512];
+		memset(buf, 0x0, 512);
+
+		read(in, buf, 512);
 		src = buf;
+	
 	} else if (argc == 2) {
+	
 		src = argv[1];
+	
 	}
 	if (src) {
 		size_t scode;
-		sscanf(argv[1], "%ld", &scode);
+		sscanf(src, "%ld", &scode);
 
 		if (scode > MAX_EXIT_VAL) {
 
@@ -39,7 +45,7 @@ int builtin_exit(int in, int out, int err, int argc, char **argv)
 			return STATUS_EXIT_ERROR;
 		}
 
-		code = (short)scode;
+		code = (short) scode;
 	}
 	is_exit_call = 1;
 

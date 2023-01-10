@@ -265,7 +265,7 @@ int process_ast(const struct ast_t * ast, int * in, int * out, int * err)
 
 	} else if(ast->tok.type == REDIRECT) {
 
-		char * filename = c_str(ast->childs[1].tok.data);
+		char * filename = c_str(ast->childs[1].tok.data);	
 		int s = openfd(filename, ast->tok.type_spec, in, out, err);
 
 		free(filename);
@@ -278,22 +278,17 @@ int process_ast(const struct ast_t * ast, int * in, int * out, int * err)
 
 int ast_is_internal(const struct ast_t * ast)
 {
-	if(!ast || ast->tok.type != CMD)
+	if(!ast)
 		return 0;
 
-	char * cmd = c_str(ast->tok.data);
 	int ret = 0;
 
-	if(is_internal(cmd)) {
-		free(cmd);
-		return 1;
-	}
-
+	if(ast->tok.type_spec == INTERNAL)
+		ret = 1;
 
 	for(size_t i = 0; i < ast->size && !ret; i++)
 		ret = ast_is_internal(ast->childs + i);
 
-	free(cmd);
 	return ret;
 }
 
@@ -305,7 +300,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		 * If slash is executing a slash
 		 * program, then we stand on the
 		 * main process.
-		 */
+		 */	
 
 		slasherrno = process_ast(ast->childs, &in, &out, &err);
 		return;
@@ -331,8 +326,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 
 		fds[2 * k - 1] = fd[1];
 		fds[2 * k] = fd[0];
-
-	//	fcntl(fds[2 * k], F_SETFD, O_NONBLOCK);
+	
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
