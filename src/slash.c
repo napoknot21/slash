@@ -142,7 +142,6 @@ int main(int argc, char ** argv)
 		//	exec(line, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
 			struct ast_t * gast = make_gast(line->data, line->size);
 			exec_ast(gast, 0, STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO);
-
 			free_ast(gast);
 			free_vector(line);
 		}

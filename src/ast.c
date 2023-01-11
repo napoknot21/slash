@@ -77,6 +77,7 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 
 			ast->childs = malloc(ast->size * ast_s);
 			copy_ast(last, ast->childs);
+			free_ast(last);
 
 			j++;
 
@@ -90,7 +91,6 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 			ast->childs[j].size = 0;
 			ast->childs[j].childs = NULL;
 		}
-
 		last = ast;
 
 	}
