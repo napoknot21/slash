@@ -48,7 +48,7 @@ static void print_welcome() {
 
 
 static void print_bye() {
-	dprintf(STDERR_FILENO ,"exiting... \n\n");
+	dprintf(STDERR_FILENO ,"exiting...\n\n");
 }
 
 static char *compute_prompt()
@@ -70,8 +70,8 @@ static char *compute_prompt()
 	size_t errlen = strlen(err);
 	char *format = "[%s%s%s]%s%s%s%s$ ";
 	if (pwdlen + 8 + errlen > PROMPT_SIZE) {
-		char *tmp = pwd + pwdlen - PROMPT_SIZE + 8;
-		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", tmp,
+		pwd += pwdlen - PROMPT_SIZE + 7 + errlen;
+		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", pwd,
 			C_CLEAR);
 	} else {
 		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "", pwd,
