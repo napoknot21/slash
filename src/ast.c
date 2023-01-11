@@ -19,9 +19,9 @@
 
 int polska(struct token * tokens, size_t size, struct vector * ops, struct vector * args, struct vector * argc)
 {
-	
+
 	size_t cc = 0;
-	
+
 	for(size_t i = 0; i < size; i++)
 	{
 		if(tokens[i].type == ARG) {
@@ -161,14 +161,14 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out, int * 
 
 	if(ts >= STDERR && ts <= STDERR_APPEND)
 		fd = err;
-	else if(ts == STDIN) {
+	if(ts == STDIN) {
 
 		flags = O_RDONLY;
 		ret = 0;
 		fd = in;
 
 	} else if(ts == STDOUT || ts == STDERR)
-		flags = O_WRONLY | O_CREAT;
+		flags = O_WRONLY | O_CREAT | O_EXCL;
 	else if(ts == STDOUT_TRUNC || ts == STDERR_TRUNC)
 		flags = O_WRONLY | O_TRUNC | O_CREAT;
 	else if(ts == STDOUT_APPEND || ts == STDERR_APPEND)
@@ -182,8 +182,8 @@ int openfd(char * filename, enum token_type_spec ts, int * in, int * out, int * 
 		*in = in_t;
 		*out = out_t;
 		*err = err_t;
-
-		perror("Impossible d'ouvrir ce fichier.");
+		perror("Impossible d'ouvrir ce fichier");
+		slasherrno = S_EFAIL;
 		return -1;
 
 	}
@@ -196,7 +196,7 @@ int process_ast(const struct ast_t * ast, int * in, int * out, int * err)
 	/*
 	 * Starts a new process, creating
 	 * a new group
-	 */	
+	 */
 
 	int status = 0;
 
@@ -265,8 +265,10 @@ int process_ast(const struct ast_t * ast, int * in, int * out, int * err)
 
 	} else if(ast->tok.type == REDIRECT) {
 
-		char * filename = c_str(ast->childs[1].tok.data);	
+		char * filename = c_str(ast->childs[1].tok.data);
 		int s = openfd(filename, ast->tok.type_spec, in, out, err);
+		if (s == -1)
+			return 1;
 
 		free(filename);
 
@@ -300,7 +302,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 		 * If slash is executing a slash
 		 * program, then we stand on the
 		 * main process.
-		 */	
+		 */
 
 		slasherrno = process_ast(ast->childs, &in, &out, &err);
 		return;
@@ -326,7 +328,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 
 		fds[2 * k - 1] = fd[1];
 		fds[2 * k] = fd[0];
-	
+
 	}
 
 	pid_t * pids = malloc(ast_s * sizeof(pid_t));
@@ -340,13 +342,13 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 			return;
 
 		} else if(!pids[k]) {
-			
+
 			for(size_t i = 0; i < 2 * ast_s; i++) {
-		
-				if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO && i != 2 * k && i != 2 * k + 1) 
+
+				if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO && i != 2 * k && i != 2 * k + 1)
 					close(fds[i]);
-	
-			}	
+
+			}
 
 			int status = process_ast(ast->childs + k, &fds[2 * k], &fds[2 * k + 1], &err);
 			exit(status);
@@ -355,10 +357,10 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	}
 
 	for(size_t i = 0; i < 2 * ast_s; i++) {
-		
-		if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO) 
+
+		if(fds[i] != STDIN_FILENO && fds[i] != STDOUT_FILENO)
 			close(fds[i]);
-	
+
 	}
 
 	free(fds);
@@ -369,7 +371,7 @@ void exec_ast(const struct ast_t * ast, int bin, int in, int out, int err)
 	 */
 
 	for(size_t k = 0; k < ast_s; k++) {
-	
+
 		pid_t p = waitpid(pids[k], &stat, 0);
 		if(p == -1) {
 

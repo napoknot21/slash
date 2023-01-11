@@ -19,20 +19,8 @@ int builtin_exit(int in, int out, int err, int argc, char **argv)
 	short code = slasherrno;
 	char *src = NULL;
 
-	if (in != STDIN_FILENO) {
-
-		char buf[512];
-		memset(buf, 0x0, 512);
-
-		read(in, buf, 512);
-		src = buf;
-	
-	} else if (argc == 2) {
-	
+	if (argc == 2) {
 		src = argv[1];
-	
-	}
-	if (src) {
 		size_t scode;
 		sscanf(src, "%ld", &scode);
 
