@@ -69,8 +69,8 @@ static char *compute_prompt()
 	size_t pwdlen = strlen(pwd);
 	size_t errlen = strlen(err);
 	char *format = "[%s%s%s]%s%s%s%s$ ";
-	if (pwdlen + 8 + errlen > PROMPT_SIZE) {
-		char *tmp = pwd + pwdlen - PROMPT_SIZE + 8;
+	if (pwdlen + 7 + errlen > PROMPT_SIZE) {
+		char *tmp = pwd + pwdlen - PROMPT_SIZE + 7 + errlen;
 		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", tmp,
 			C_CLEAR);
 	} else {
