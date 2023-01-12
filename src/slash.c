@@ -125,12 +125,13 @@ int main(int argc, char ** argv)
 	char *line;
 	rl_outstream = stderr;
 	char *prompt = compute_prompt();
-	while ((line = readline(prompt)) != NULL) {
+	while ((line = readline(prompt)) != NULL || interrupt_state || sigterm_received) {
 		interrupt_state = 0;
 		sigterm_received = 0;
 		free(prompt);
 		prompt = NULL;
-		add_history(line);
+		if (!line) continue;
+        add_history(line);
 		struct vector *tokens = lex(line);
 		free(line);
 		if (tokens == NULL) {
