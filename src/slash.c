@@ -69,9 +69,15 @@ static char *compute_prompt()
 	size_t pwdlen = strlen(pwd);
 	size_t errlen = strlen(err);
 	char *format = "[%s%s%s]%s%s%s%s$ ";
+<<<<<<< HEAD
 	if (pwdlen + 8 + errlen > PROMPT_SIZE) {
 		pwd += pwdlen - PROMPT_SIZE + 7 + errlen;
 		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", pwd,
+=======
+	if (pwdlen + 7 + errlen > PROMPT_SIZE) {
+		char *tmp = pwd + pwdlen - PROMPT_SIZE + 7 + errlen;
+		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "...", tmp,
+>>>>>>> fix
 			C_CLEAR);
 	} else {
 		sprintf(p, format, color, err, C_CLEAR, C_CYAN, "", pwd,
@@ -125,12 +131,13 @@ int main(int argc, char ** argv)
 	char *line;
 	rl_outstream = stderr;
 	char *prompt = compute_prompt();
-	while ((line = readline(prompt)) != NULL) {
+	while ((line = readline(prompt)) != NULL || interrupt_state || sigterm_received) {
 		interrupt_state = 0;
 		sigterm_received = 0;
 		free(prompt);
 		prompt = NULL;
-		add_history(line);
+		if (!line) continue;
+        add_history(line);
 		struct vector *tokens = lex(line);
 		free(line);
 		if (tokens == NULL) {
