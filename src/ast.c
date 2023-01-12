@@ -78,10 +78,6 @@ struct ast_t * make_ast(struct token * tokens, size_t size)
 			ast->childs = malloc(ast->size * ast_s);
 			copy_ast(last, ast->childs);
 			free_ast(last);
-<<<<<<< HEAD
-
-=======
->>>>>>> fix
 			j++;
 
 		} else
